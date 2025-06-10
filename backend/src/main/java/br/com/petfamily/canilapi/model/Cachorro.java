@@ -1,10 +1,9 @@
 package br.com.petfamily.canilapi.model;
 
-import java.time.LocalDate;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
 
 @Entity
 public class Cachorro {
@@ -20,7 +19,9 @@ public class Cachorro {
 
     private LocalDate dataNascimento;
     private String raca;
-    private boolean foiVendido;
+    private boolean foiVendido = false;
+
+    // --- RELACIONAMENTOS MAPEADOS ---
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_id")
@@ -47,9 +48,10 @@ public class Cachorro {
     @JoinColumn(name = "cachorro_id")
     private List<Caracteristica> caracteristicas = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cachorro_id")
+    @OneToMany(mappedBy = "cachorro", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vacina> carteiraVacinacao = new ArrayList<>();
+
+    // --- CONSTRUTORES ---
 
     public Cachorro() {
         // Construtor padrão necessário para JPA
@@ -63,130 +65,60 @@ public class Cachorro {
         this.tutor = tutorInicial;
     }
 
-    public Long getId() {
-        return id;
-    }
+    // --- GETTERS E SETTERS ---
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+    public Sexo getSexo() { return sexo; }
+    public void setSexo(Sexo sexo) { this.sexo = sexo; }
+    public LocalDate getDataNascimento() { return dataNascimento; }
+    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
+    public String getRaca() { return raca; }
+    public void setRaca(String raca) { this.raca = raca; }
+    public boolean isFoiVendido() { return foiVendido; }
+    public void setFoiVendido(boolean foiVendido) { this.foiVendido = foiVendido; }
+    public Tutor getTutor() { return tutor; }
+    public void setTutor(Tutor tutor) { this.tutor = tutor; }
+    public Cachorro getPai() { return pai; }
+    public void setPai(Cachorro pai) { this.pai = pai; }
+    public Cachorro getMae() { return mae; }
+    public void setMae(Cachorro mae) { this.mae = mae; }
+    public List<Despesa> getHistoricoDespesas() { return historicoDespesas; }
+    public void setHistoricoDespesas(List<Despesa> historicoDespesas) { this.historicoDespesas = historicoDespesas; }
+    public List<Ninhada> getHistoricoNinhadas() { return historicoNinhadas; }
+    public void setHistoricoNinhadas(List<Ninhada> historicoNinhadas) { this.historicoNinhadas = historicoNinhadas; }
+    public Venda getRegistroVenda() { return registroVenda; }
+    public void setRegistroVenda(Venda registroVenda) { this.registroVenda = registroVenda; }
+    public List<Caracteristica> getCaracteristicas() { return caracteristicas; }
+    public void setCaracteristicas(List<Caracteristica> caracteristicas) { this.caracteristicas = caracteristicas; }
+    public List<Vacina> getCarteiraVacinacao() { return carteiraVacinacao; }
+    public void setCarteiraVacinacao(List<Vacina> carteiraVacinacao) { this.carteiraVacinacao = carteiraVacinacao; }
 
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public Sexo getSexo() {
-        return sexo;
-    }
-
-    public void setSexo(Sexo sexo) {
-        this.sexo = sexo;
-    }
-
-    public LocalDate getDataNascimento() {
-        return dataNascimento;
-    }
-
-    public void setDataNascimento(LocalDate dataNascimento) {
-        this.dataNascimento = dataNascimento;
-    }
-
-    public String getRaca() {
-        return raca;
-    }
-
-    public void setRaca(String raca) {
-        this.raca = raca;
-    }
-
-    public boolean isFoiVendido() {
-        return foiVendido;
-    }
-
-    public void setFoiVendido(boolean foiVendido) {
-        this.foiVendido = foiVendido;
-    }
-
-    public Tutor getTutor() {
-        return tutor;
-    }
-
-    public void setTutor(Tutor tutor) {
-        this.tutor = tutor;
-    }
-
-    public Cachorro getPai() {
-        return pai;
-    }
-
-    public void setPai(Cachorro pai) {
-        this.pai = pai;
-    }
-
-    public Cachorro getMae() {
-        return mae;
-    }
-
-    public void setMae(Cachorro mae) {
-        this.mae = mae;
-    }
-
-    public List<Despesa> getHistoricoDespesas() {
-        return historicoDespesas;
-    }
-
-    public void setHistoricoDespesas(List<Despesa> historicoDespesas) {
-        this.historicoDespesas = historicoDespesas;
-    }
-
-    public List<Ninhada> getHistoricoNinhadas() {
-        return historicoNinhadas;
-    }
-
-    public void setHistoricoNinhadas(List<Ninhada> historicoNinhadas) {
-        this.historicoNinhadas = historicoNinhadas;
-    }
-
-    public Venda getRegistroVenda() {
-        return registroVenda;
-    }
-
-    public void setRegistroVenda(Venda registroVenda) {
-        this.registroVenda = registroVenda;
-    }
-
-    public List<Vacina> getCarteiraVacinacao() {
-        return carteiraVacinacao;
-    }
-
-    public void setCarteiraVacinacao(List<Vacina> carteiraVacinacao) {
-        this.carteiraVacinacao = carteiraVacinacao;
-    }
-
-    public void adicionarDespesa(Despesa despesa) {
-        this.historicoDespesas.add(despesa);
-        despesa.setCachorro(this);
-    }
+    // --- MÉTODOS DE NEGÓCIO ---
 
     public void adicionarVacina(Vacina vacina) {
         this.carteiraVacinacao.add(vacina);
+        vacina.setCachorro(this);
     }
+
+    public void adicionarDespesa(Despesa despesa) {
+        this.historicoDespesas.add(despesa); // Adiciona a despesa à lista
+        despesa.setCachorro(this);
+    }
+
 
     public void adicionarCaracteristica(Caracteristica caracteristica) {
         this.caracteristicas.add(caracteristica);
     }
 
     public void adicionarNinhada(Ninhada ninhada) {
-        if (this.sexo == Sexo.FEMEA) {
-            this.historicoNinhadas.add(ninhada);
-            ninhada.setMae(this);
-        } else {
+        if (this.sexo != Sexo.FEMEA) {
             throw new IllegalArgumentException("Apenas fêmeas podem ter ninhadas.");
         }
+        this.historicoNinhadas.add(ninhada);
+        ninhada.setMae(this);
     }
 
     public void realizarVenda(Venda venda) {
@@ -198,6 +130,8 @@ public class Cachorro {
         this.setRegistroVenda(venda);
         venda.setCachorroVendido(this);
     }
+
+    // --- MÉTODOS DE CÁLCULO E EXIBIÇÃO ---
 
     public double calcularCustoTotal() {
         return this.historicoDespesas.stream()
@@ -218,9 +152,9 @@ public class Cachorro {
         }
 
         double custoTotal = calcularCustoTotal();
-        System.out.println("\nCUSTO TOTAL ACUMULADO R$ " + String.format("%.2f", custoTotal));
+        System.out.printf("\nCUSTO TOTAL ACUMULADO: R$ %.2f\n", custoTotal);
+        System.out.println("\n--- DADOS DA VENDA ---");
 
-        System.out.println("\n--- DADOS DE VENDA ---");
         if (!foiVendido) {
             System.out.println("Este cachorro ainda não foi vendido.");
         } else {
@@ -228,8 +162,8 @@ public class Cachorro {
             double valorVenda = this.registroVenda.getValorVenda();
             double lucro = valorVenda - custoTotal;
 
-            System.out.println("\nLUCRO DA VENDA: R$ %.2f (Venda): R$ %.2f - R$ %.2f (Custo) = R$ %.2f"
-                    .formatted(valorVenda, custoTotal, lucro));
+            System.out.printf("\nLUCRO DA VENDA: R$ %.2f (Venda) - R$ %.2f (Custo) = R$ %.2f\n",
+                    valorVenda, custoTotal, lucro);
         }
         System.out.println("=========================================\n");
     }

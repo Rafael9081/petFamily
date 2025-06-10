@@ -1,9 +1,6 @@
 package br.com.petfamily.canilapi.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
@@ -17,6 +14,18 @@ public class Vacina {
     private LocalDate dataAplicacao;
     private LocalDate dataProximaAplicacao;
     private double valor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cachorro_id")
+    private Cachorro cachorro;
+
+    public Cachorro getCachorro() {
+        return cachorro;
+    }
+
+    public void setCachorro(Cachorro cachorro) {
+        this.cachorro = cachorro;
+    }
 
     public Vacina() {
 
