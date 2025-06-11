@@ -16,4 +16,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
 
     // Método para verificar se um Tutor existe pelo e-mail
     boolean existsByEmail(String email);
+
+    // Método para encontrar um Tutor pelo nome
+    Tutor findByNome(String nome);
 }

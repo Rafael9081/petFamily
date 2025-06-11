@@ -21,7 +21,7 @@ public class Ninhada {
     @JoinColumn(name = "pai_id", nullable = false)
     private Cachorro pai;
 
-    public Ninhada() {
+    public Ninhada(LocalDate dataNascimento, int machos, int femeas, Cachorro mae, Cachorro pai) {
         // Construtor padrão necessário para JPA
     }
 
