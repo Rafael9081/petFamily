@@ -1,6 +1,7 @@
 package br.com.petfamily.canilapi.model;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 import jakarta.persistence.*;
 
@@ -77,9 +78,25 @@ public class Venda {
         this.novoTutor = novoTutor;
     }
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Venda venda = (Venda) o;
+        return Objects.equals(id, venda.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
     @Override
     public String toString() {
+        // Usar um valor padrão caso o tutor seja nulo para evitar NullPointerException
+        String nomeTutor = (novoTutor != null) ? novoTutor.getNome() : "N/A";
         return String.format("Vendido para %s por R$ %.2f em %s",
-                novoTutor.getNome(), valorVenda, dataVenda);
+                nomeTutor, valorVenda, dataVenda);
     }
 }

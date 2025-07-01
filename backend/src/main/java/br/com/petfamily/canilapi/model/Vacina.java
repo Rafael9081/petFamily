@@ -3,6 +3,7 @@ package br.com.petfamily.canilapi.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 public class Vacina {
@@ -76,5 +77,18 @@ public class Vacina {
 
     public void setValor(double valor) {
         this.valor = valor;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vacina vacina = (Vacina) o;
+        return Objects.equals(id, vacina.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

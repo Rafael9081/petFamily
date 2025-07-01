@@ -167,4 +167,10 @@ public class Cachorro {
         }
         System.out.println("=========================================\n");
     }
+
+    public void setNinhadasComoMae(List<Ninhada> ninhadas) {
+        this.historicoNinhadas = ninhadas;
+    }
+
+
 }

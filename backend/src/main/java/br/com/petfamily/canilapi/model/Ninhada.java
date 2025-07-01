@@ -1,7 +1,8 @@
 package br.com.petfamily.canilapi.model;
-import java.time.LocalDate;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 public class Ninhada {
@@ -21,18 +22,31 @@ public class Ninhada {
     @JoinColumn(name = "pai_id", nullable = false)
     private Cachorro pai;
 
-    public Ninhada(LocalDate dataNascimento, int machos, int femeas, Cachorro mae, Cachorro pai) {
-        // Construtor padrão necessário para JPA
+    /**
+     * Construtor padrão necessário para JPA.
+     */
+    public Ninhada() {
     }
 
-    public Ninhada(Long id, LocalDate dataNascimento, int quantidadeMachos, int quantidadeFemeas, Cachorro mae, Cachorro pai) {
-        this.id = id;
+    /**
+     * Construtor para criar uma nova ninhada.
+     */
+    public Ninhada(LocalDate dataNascimento, int quantidadeMachos, int quantidadeFemeas, Cachorro mae, Cachorro pai) {
+        // Validações básicas para garantir a integridade dos dados
+        if (dataNascimento == null || mae == null || pai == null) {
+            throw new IllegalArgumentException("Data de nascimento, mãe e pai não podem ser nulos.");
+        }
+        if (quantidadeMachos < 0 || quantidadeFemeas < 0) {
+            throw new IllegalArgumentException("A quantidade de filhotes não pode ser negativa.");
+        }
         this.dataNascimento = dataNascimento;
         this.quantidadeMachos = quantidadeMachos;
         this.quantidadeFemeas = quantidadeFemeas;
         this.mae = mae;
         this.pai = pai;
     }
+
+    // --- Getters e Setters ---
 
     public Long getId() {
         return id;
@@ -82,7 +96,37 @@ public class Ninhada {
         this.pai = pai;
     }
 
-    public int getQuantidadeTotal() {
-        return quantidadeMachos + quantidadeFemeas;
+    /**
+     * Retorna a quantidade total de filhotes na ninhada.
+     * Este é um valor calculado e não é persistido no banco de dados.
+     * A anotação @Transient informa ao JPA para ignorar este método.
+     */
+    @Transient
+    public int getQuantidadeTotalFilhotes() {
+        return this.quantidadeMachos + this.quantidadeFemeas;
+    }
+
+    // --- equals, hashCode e toString ---
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Ninhada ninhada = (Ninhada) o;
+        return Objects.equals(id, ninhada.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Ninhada{" +
+                "id=" + id +
+                ", dataNascimento=" + dataNascimento +
+                ", totalFilhotes=" + getQuantidadeTotalFilhotes() +
+                '}';
     }
 }

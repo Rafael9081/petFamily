@@ -1,11 +1,12 @@
 package br.com.petfamily.canilapi.service;
 
+import br.com.petfamily.canilapi.controller.dto.DespesaRequestDTO; // Usando o DTO
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.CategoriaDespesa;
 import br.com.petfamily.canilapi.model.Despesa;
 import br.com.petfamily.canilapi.repository.CachorroRepository;
 import br.com.petfamily.canilapi.repository.DespesaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,45 +16,51 @@ import java.util.List;
 @Service
 public class DespesaService {
 
-    @Autowired
-    private DespesaRepository despesaRepository;
+    private final DespesaRepository despesaRepository;
+    private final CachorroRepository cachorroRepository;
 
-    @Autowired
-    private CachorroRepository cachorroRepository;
+    // 1. Injeção de dependência via construtor (melhor prática)
+    public DespesaService(DespesaRepository despesaRepository, CachorroRepository cachorroRepository) {
+        this.despesaRepository = despesaRepository;
+        this.cachorroRepository = cachorroRepository;
+    }
 
     @Transactional
-    public Despesa registrarDespesa(Long cachorroId, Despesa dadosDespesa) {
+    // 2. Método agora recebe o DTO, tornando-o seguro e consistente
+    public Despesa registrarDespesa(Long cachorroId, DespesaRequestDTO dto) {
         Cachorro cachorro = cachorroRepository.findById(cachorroId)
-                .orElseThrow(() -> new RuntimeException("Cachorro não encontrado com o ID: " + cachorroId));
+                .orElseThrow(() -> new EntityNotFoundException("Cachorro não encontrado com o ID: " + cachorroId));
 
-        if (dadosDespesa.getValor() <= 0) {
-            throw new IllegalArgumentException("O valor da despesa deve ser maior que zero.");
-        }
+        // 3. A validação manual foi removida, pois agora é tratada pelo @Valid no controller
+        Despesa novaDespesa = new Despesa();
+        novaDespesa.setDescricao(dto.descricao());
+        novaDespesa.setValor(dto.valor());
+        novaDespesa.setCachorro(cachorro);
 
-        if (dadosDespesa.getDescricao() == null || dadosDespesa.getDescricao().isBlank()) {
-            throw new IllegalArgumentException("A descrição da despesa não pode ser vazia.");
-        }
+        // A lógica para definir a data padrão permanece, o que é ótimo
+        novaDespesa.setData(dto.data() != null ? dto.data() : LocalDate.now());
 
-        dadosDespesa.setCachorro(cachorro);
-        if (dadosDespesa.getData() == null) {
-            dadosDespesa.setData(LocalDate.now());
-        }
-
-        return despesaRepository.save(dadosDespesa);
+        return despesaRepository.save(novaDespesa);
     }
 
     @Transactional
     public void deletarDespesa(Long despesaId) {
-        if (!despesaRepository.existsById(despesaId)) {
-            throw new RuntimeException("Despesa não encontrada com o ID: " + despesaId);
-        }
-        despesaRepository.deleteById(despesaId);
+        // Uma pequena melhoria: buscar o objeto primeiro garante que ele existe
+        // e é mais consistente com o padrão "buscar-ou-falhar".
+        Despesa despesa = despesaRepository.findById(despesaId)
+                .orElseThrow(() -> new EntityNotFoundException("Despesa não encontrada com o ID: " + despesaId));
+        despesaRepository.delete(despesa);
     }
 
     public List<Despesa> listarDespesasDeUmCachorro(long cachorroId) {
+        // Validação para garantir que o cachorro existe antes de listar suas despesas
+        if (!cachorroRepository.existsById(cachorroId)) {
+            throw new EntityNotFoundException("Cachorro não encontrado com o ID: " + cachorroId);
+        }
         return despesaRepository.findByCachorro_Id(cachorroId);
     }
 
+    // Nenhuma alteração necessária nos métodos abaixo, eles já estão bem implementados.
     public List<Despesa> listarDespesasPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
         return despesaRepository.findAllByDataBetween(dataInicio, dataFim);
     }
@@ -66,5 +73,4 @@ public class DespesaService {
         Double total = despesaRepository.sumDespesasByPeriodo(dataInicio, dataFim);
         return total == null ? 0.0 : total;
     }
-    
 }
