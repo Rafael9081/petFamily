@@ -1,42 +1,45 @@
 package br.com.petfamily.canilapi.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.Objects;
 
-import jakarta.persistence.*;
-
 @Entity
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class Venda {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double valorVenda;
-    private LocalDate dataVenda;
+    // Nomes dos campos simplificados para maior clareza
+    private double valor;
+    private LocalDate data;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cachorro_id", unique = true, nullable = false)
-    private Cachorro cachorroVendido;
+    private Cachorro cachorro;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "novo_tutor_id", nullable = false)
     private Tutor novoTutor;
 
-    public Venda(double valorVenda, LocalDate dataVenda) {
-        this.valorVenda = valorVenda;
-        this.dataVenda = dataVenda;
+    // Construtor padregido, necessário para JPA, mas desencoraja o uso direto
+    protected Venda() {
     }
 
-    public Venda() {
-        // Construtor padrão necessário para JPA
-    }
-
-    public Venda(double valorVenda, LocalDate dataVenda, Cachorro cachorroVendido, Tutor novoTutor) {
-        this.valorVenda = valorVenda;
-        this.dataVenda = dataVenda;
-        this.cachorroVendido = cachorroVendido;
+    // Único construtor público, garantindo que uma Venda sempre seja criada em um estado válido
+    public Venda(double valor, LocalDate data, Cachorro cachorro, Tutor novoTutor) {
+        this.valor = valor;
+        this.data = data;
+        this.cachorro = cachorro;
         this.novoTutor = novoTutor;
     }
+
+    // --- Getters e Setters com nomes canônicos ---
 
     public Long getId() {
         return id;
@@ -46,28 +49,28 @@ public class Venda {
         this.id = id;
     }
 
-    public double getValorVenda() {
-        return valorVenda;
+    public double getValor() {
+        return valor;
     }
 
-    public void setValorVenda(double valorVenda) {
-        this.valorVenda = valorVenda;
+    public void setValor(double valor) {
+        this.valor = valor;
     }
 
-    public LocalDate getDataVenda() {
-        return dataVenda;
+    public LocalDate getData() {
+        return data;
     }
 
-    public void setDataVenda(LocalDate dataVenda) {
-        this.dataVenda = dataVenda;
+    public void setData(LocalDate data) {
+        this.data = data;
     }
 
-    public Cachorro getCachorroVendido() {
-        return cachorroVendido;
+    public Cachorro getCachorro() {
+        return cachorro;
     }
 
-    public void setCachorroVendido(Cachorro cachorroVendido) {
-        this.cachorroVendido = cachorroVendido;
+    public void setCachorro(Cachorro cachorro) {
+        this.cachorro = cachorro;
     }
 
     public Tutor getNovoTutor() {
@@ -78,8 +81,7 @@ public class Venda {
         this.novoTutor = novoTutor;
     }
 
-
-    @Override
+    // --- MOverride
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -94,9 +96,8 @@ public class Venda {
 
     @Override
     public String toString() {
-        // Usar um valor padrão caso o tutor seja nulo para evitar NullPointerException
         String nomeTutor = (novoTutor != null) ? novoTutor.getNome() : "N/A";
         return String.format("Vendido para %s por R$ %.2f em %s",
-                nomeTutor, valorVenda, dataVenda);
+                nomeTutor, valor, data);
     }
 }

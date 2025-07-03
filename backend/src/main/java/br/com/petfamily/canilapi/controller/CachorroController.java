@@ -4,15 +4,17 @@ import br.com.petfamily.canilapi.controller.dto.CachorroRequestDTO;
 import br.com.petfamily.canilapi.controller.dto.CachorroResponseDTO;
 import br.com.petfamily.canilapi.controller.dto.DespesaRequestDTO;
 import br.com.petfamily.canilapi.model.Cachorro;
+import br.com.petfamily.canilapi.model.Despesa;
 import br.com.petfamily.canilapi.service.CachorroService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/cachorros")
@@ -27,13 +29,11 @@ public class CachorroController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CachorroResponseDTO>> listarTodos() {
-        // 2. CORREÇÃO: Busca a lista de entidades do serviço
-        List<Cachorro> cachorros = cachorroService.listarTodos();
-        // 3. Converte a lista de Entidades para uma lista de DTOs
-        List<CachorroResponseDTO> dtos = cachorros.stream()
-                .map(CachorroResponseDTO::new) // Equivalente a .map(cachorro -> new CachorroResponseDTO(cachorro))
-                .collect(Collectors.toList());
+    public ResponseEntity<org.springframework.data.domain.Page<CachorroResponseDTO>> listarPaginados(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        org.springframework.data.domain.Page<Cachorro> cachorros = cachorroService.listarTodosPaginado(page, size);
+        org.springframework.data.domain.Page<CachorroResponseDTO> dtos = cachorros.map(CachorroResponseDTO::new);
         return ResponseEntity.ok(dtos);
     }
 
@@ -59,9 +59,45 @@ public class CachorroController {
     }
 
     @PostMapping("/{id}/despesas")
-    public ResponseEntity<Void> adicionarDespesa(@PathVariable Long id, @RequestBody @Valid DespesaRequestDTO requestDTO) {
-        cachorroService.adicionarDespesa(id, requestDTO);
-        // Retornar 201 Created é mais apropriado para criação de sub-recursos
-        return ResponseEntity.created(null).build();
+    public ResponseEntity<Void> adicionarDespesa(@PathVariable Long id, @RequestBody @Valid DespesaRequestDTO requestDTO,
+                                                 UriComponentsBuilder uriBuilder) {
+        // Aqui você poderia retornar a despesa criada
+        Despesa despesa = cachorroService.adicionarDespesa(id, requestDTO);
+        URI uri = uriBuilder.path("/cachorros/{cachorroId}/despesas/{despesaId}")
+                .buildAndExpand(id, despesa.getId()).toUri();
+        return ResponseEntity.created(uri).build();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CachorroResponseDTO> atualizar(@PathVariable Long id,
+                                                         @RequestBody @Valid CachorroRequestDTO dto) {
+        Cachorro cachorroAtualizado = cachorroService.atualizar(id, dto);
+        return ResponseEntity.ok(new CachorroResponseDTO(cachorroAtualizado));
+    }
+
+    @GetMapping("/{id}/relatorio-financeiro")
+    public ResponseEntity<br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO> getRelatorioFinanceiro(@PathVariable Long id) {
+        br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO relatorio = cachorroService.gerarRelatorioFinanceiro(id);
+        return ResponseEntity.ok(relatorio);
+    }
+
+    @GetMapping("/todos")
+    public ResponseEntity<List<CachorroResponseDTO>> listarTodos() {
+        List<Cachorro> cachorros = cachorroService.listarTodos();
+        List<CachorroResponseDTO> dtos = cachorros.stream()
+                .map(CachorroResponseDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<CachorroResponseDTO> atualizarParcial(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> campos) {
+        Cachorro cachorro = cachorroService.atualizarParcial(id, campos);
+        return ResponseEntity.ok(new CachorroResponseDTO(cachorro));
+    }
+
+
+
 }

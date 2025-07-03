@@ -7,5 +7,5 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface VendaRepository extends JpaRepository<Venda, Long> {
-    List<Venda> findAllByDataVendaBetween(LocalDate dataInicio, LocalDate dataFim);
+    List<Venda> findAllByDataBetween(LocalDate dataInicio, LocalDate dataFim);
 }

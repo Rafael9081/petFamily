@@ -1,26 +1,31 @@
 package br.com.petfamily.canilapi.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class PlanoAlimentar {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String tipoRacao;
-    private String quantidadeGramasPorDia;
-    private String frequenciaDiaria;
+    private double quantidadeGramasPorDia;
+    private int frequenciaDiaria;
     private String instrucoesEspeciais;
 
     public PlanoAlimentar() {
 
     }
 
-    public PlanoAlimentar(String tipoRacao, String quantidadeGramasPorDia, String frequenciaDiaria, String instrucoesEspeciais) {
+    public PlanoAlimentar(String tipoRacao, double quantidadeGramasPorDia, int frequenciaDiaria, String instrucoesEspeciais) {
         this.tipoRacao = tipoRacao;
         this.quantidadeGramasPorDia = quantidadeGramasPorDia;
         this.frequenciaDiaria = frequenciaDiaria;
@@ -43,19 +48,19 @@ public class PlanoAlimentar {
         this.tipoRacao = tipoRacao;
     }
 
-    public String getQuantidadeGramasPorDia() {
+    public double getQuantidadeGramasPorDia() {
         return quantidadeGramasPorDia;
     }
 
-    public void setQuantidadeGramasPorDia(String quantidadeGramasPorDia) {
+    public void setQuantidadeGramasPorDia(double quantidadeGramasPorDia) {
         this.quantidadeGramasPorDia = quantidadeGramasPorDia;
     }
 
-    public String getFrequenciaDiaria() {
+    public int getFrequenciaDiaria() {
         return frequenciaDiaria;
     }
 
-    public void setFrequenciaDiaria(String frequenciaDiaria) {
+    public void setFrequenciaDiaria(int frequenciaDiaria) {
         this.frequenciaDiaria = frequenciaDiaria;
     }
 

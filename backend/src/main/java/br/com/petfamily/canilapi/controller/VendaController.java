@@ -1,28 +1,33 @@
 package br.com.petfamily.canilapi.controller;
 
-import br.com.petfamily.canilapi.controller.dto.VendaRequest;
+import br.com.petfamily.canilapi.controller.dto.VendaRequestDTO;
+import br.com.petfamily.canilapi.controller.dto.VendaResponseDTO;
 import br.com.petfamily.canilapi.model.Venda;
 import br.com.petfamily.canilapi.service.VendaService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/vendas")
-@CrossOrigin(origins = "*")
 public class VendaController {
 
-    @Autowired
-    private VendaService vendaService;
+    private final VendaService vendaService;
 
-    // A venda é uma ação em um cachorro, então o endpoint reflete isso.
-    @PostMapping("/cachorro/{cachorroId}")
-    public ResponseEntity<Venda> registrarVenda(@PathVariable Long cachorroId, @RequestBody VendaRequest request) {
-        Venda novaVenda = vendaService.registrarVenda(
-                cachorroId,
-                request.novoTutorId(),
-                request.valor()
-        );
-        return ResponseEntity.status(201).body(novaVenda);
+    public VendaController(VendaService vendaService) {
+        this.vendaService = vendaService;
+    }
+
+    @PostMapping
+    public ResponseEntity<VendaResponseDTO> realizarVenda(@RequestBody @Valid VendaRequestDTO dto, UriComponentsBuilder uriBuilder) {
+        Venda novaVenda = vendaService.realizarVenda(dto);
+        URI uri = uriBuilder.path("/vendas/{id}").buildAndExpand(novaVenda.getId()).toUri();
+        return ResponseEntity.created(uri).body(new VendaResponseDTO(novaVenda));
     }
 }

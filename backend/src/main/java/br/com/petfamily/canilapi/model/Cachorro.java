@@ -1,11 +1,16 @@
 package br.com.petfamily.canilapi.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class Cachorro {
 
     @Id
@@ -41,20 +46,25 @@ public class Cachorro {
     @OneToMany(mappedBy = "mae", cascade = CascadeType.ALL)
     private List<Ninhada> historicoNinhadas = new ArrayList<>();
 
-    @OneToOne(mappedBy = "cachorroVendido", cascade = CascadeType.ALL)
+    // --- CORREÇÃO AQUI ---
+    // O valor de 'mappedBy' deve ser o nome do campo na entidade Venda, que é "cachorro".
+    @OneToOne(mappedBy = "cachorro", cascade = CascadeType.ALL)
     private Venda registroVenda;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cachorro_id")
+    @OneToMany(mappedBy = "cachorro", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Caracteristica> caracteristicas = new ArrayList<>();
 
     @OneToMany(mappedBy = "cachorro", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vacina> carteiraVacinacao = new ArrayList<>();
 
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "plano_alimentar_id", referencedColumnName = "id")
+    private PlanoAlimentar planoAlimentar;
+
     // --- CONSTRUTORES ---
 
     public Cachorro() {
-        // Construtor padrão necessário para JPA
+        // Construtor padrão necessrio para JPA
     }
 
     public Cachorro(String nome, Sexo sexo, LocalDate dataNascimento, String raca, Tutor tutorInicial) {
@@ -95,6 +105,8 @@ public class Cachorro {
     public void setCaracteristicas(List<Caracteristica> caracteristicas) { this.caracteristicas = caracteristicas; }
     public List<Vacina> getCarteiraVacinacao() { return carteiraVacinacao; }
     public void setCarteiraVacinacao(List<Vacina> carteiraVacinacao) { this.carteiraVacinacao = carteiraVacinacao; }
+    public PlanoAlimentar getPlanoAlimentar() { return planoAlimentar; }
+    public void setPlanoAlimentar(PlanoAlimentar planoAlimentar) { this.planoAlimentar = planoAlimentar; }
 
     // --- MÉTODOS DE NEGÓCIO ---
 
@@ -110,7 +122,9 @@ public class Cachorro {
 
 
     public void adicionarCaracteristica(Caracteristica caracteristica) {
+
         this.caracteristicas.add(caracteristica);
+        caracteristica.setCachorro(this);
     }
 
     public void adicionarNinhada(Ninhada ninhada) {
@@ -128,7 +142,7 @@ public class Cachorro {
         this.setFoiVendido(true);
         this.setTutor(venda.getNovoTutor());
         this.setRegistroVenda(venda);
-        venda.setCachorroVendido(this);
+        venda.setCachorro(this);
     }
 
     // --- MÉTODOS DE CÁLCULO E EXIBIÇÃO ---
@@ -159,7 +173,7 @@ public class Cachorro {
             System.out.println("Este cachorro ainda não foi vendido.");
         } else {
             System.out.println(this.registroVenda.toString());
-            double valorVenda = this.registroVenda.getValorVenda();
+            double valorVenda = this.registroVenda.getValor();
             double lucro = valorVenda - custoTotal;
 
             System.out.printf("\nLUCRO DA VENDA: R$ %.2f (Venda) - R$ %.2f (Custo) = R$ %.2f\n",
@@ -171,6 +185,4 @@ public class Cachorro {
     public void setNinhadasComoMae(List<Ninhada> ninhadas) {
         this.historicoNinhadas = ninhadas;
     }
-
-
 }
