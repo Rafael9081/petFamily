@@ -1,61 +1,107 @@
-# PetFamily
-# Canil API (PetFamily Canil Manager)
+# Canil Manager API
 
-## Descrição
+![Java](https://img.shields.io/badge/Java-21-blue.svg)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.1-brightgreen.svg)
+![Maven](https://img.shields.io/badge/Maven-4.0.0-red.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-A **Canil API** é um sistema backend desenvolvido em Java com Spring Boot, projetado para gerenciar as operações de um canil. Ele permite o cadastro e acompanhamento de cães, suas ninhadas, despesas associadas, registros de vendas, características e histórico de vacinação.
+API REST para o gerenciamento de um canil de cães, desenvolvida com Spring Boot. O projeto permite o controle completo sobre os animais, incluindo cadastro, despesas, vendas e relatórios financeiros.
 
-## Entidades Principais do Domínio
+## Índice
 
-O sistema modela as seguintes entidades principais:
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Principais Funcionalidades](#principais-funcionalidades)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Como Executar](#como-executar)
+- [Documentação da API (Swagger)](#documentação-da-api-swagger)
+- [Endpoints da API](#endpoints-da-api)
+- [Testes](#testes)
 
-*   **`Cachorro`**: Representa um cão no canil, incluindo seus dados básicos (nome, sexo, data de nascimento, raça), informações de parentesco (pai e mãe), tutor, histórico de despesas, ninhadas (se for fninhada de filhotes, vinculada a uma mãe e um pai.
-*   **`Despesa`**: Modela os gastos associados a um cão específico (ex: alimentação, veterinário).
-*   **`Tutor`**: Representa o proprietário ou responsável por um cão.
-*   **`Venda`**: Contém as informações sobre a venda de um cão.
-*   **`Caracteristica`**: Descreve características específicas de um cão.
-*   **`Vacina`**: Registra as vacinas aplicadas a um cão.
-*   **`Sexo`**: Enum para o sexo do cão (MACHO, FEMEA).
-*   **`CategoriaDespesa`**: Enum para classificar os tipos de despesa.
+## Sobre o Projeto
 
-## Funcionalidades Implementadas (e em Desenvolvimento)
+O **Canil Manager API** foi criado para ser um sistema de back-end robusto e escalável para a gestão de um canil. A arquitetura foi desenhada seguindo as melhores práticas de desenvolvimento, como a separação de responsabilidades em camadas (Controller, Service, Repository) e o uso do padrão DTO (Data Transfer Object) para garantir um contrato de API estável e seguro.
 
-*   **Gerenciamento de Cães:**
-    *   CRUD completo para cães.
-    *   Associação de pai e mãe.
-    *   Registro de tutor.
-    *   Marcação de cães como vendidos e associação com um registro de venda.
-*   **Gerenciamento de Ninhadas:**
-    *   Registro de novas ninhadas, com data de nascimento, quantidade de machos e fêmeas, e associação com mãe e pai.
-    *   Listagem de ninhadas por mãe.
-    *   Listagem de ninhadas por ano de nascimento.
-*   **Gerenciamento de Despesas:**
-    *   Registro de despesas para cães específicos, incluindo descrição, valor, data e categoria.
-    *   Exclusão de despesas.
-    *   Listagem de despesas por cão, período ou categoria.
-    *   Cálculo do custo total de despesas por período.
-*   **Relatórios Financeiros:**
-    *   Geração de relatório financeiro para um cão individual, detalhando despesas, custo total e lucro da venda (se aplicável).
-*   **Saúde e Características:**
-    *   Adição de vacinas à carteira de vacinação de um cão.
-    *   Adição de características a um cão.
+## Principais Funcionalidades
+
+- ✅ **CRUD completo** para a entidade `Cachorro`.
+- ✅ Gerenciamento de **sub-recursos**, como a adição de despesas a um cachorro específico.
+- ✅ Geração de **relatórios financeiros** detalhados por animal, com cálculo de custos e lucro.
+- ✅ **Atualização parcial** de recursos com o método `PATCH`, permitindo modificar apenas campos específicos.
+- ✅ **Paginação** nas listagens para otimizar a performance.
+- ✅ **Validação de dados** de entrada na camada de Controller (`@Valid`).
+- ✅ **Tratamento de exceções** centralizado para respostas de erro padronizadas.
+- ✅ **Documentação automática** da API com Springdoc (Swagger UI).
+- ✅ Cobertura de **testes de unidade e integração** para garantir a confiabilidade do código.
 
 ## Tecnologias Utilizadas
 
-*   **Java 17+** (ou a versão do seu JDK)
-*   **Spring Boot** (para criação rápida de aplicações stand-alone baseadas em Spring)
-    *   Spring Web (para criação de APIs RESTful)
-    *   Spring Data JPA (para persistência de dados e interação com banco de dados)
-*   **Maven** (para gerenciamento de depend e build do projeto)
-*   **Banco de Dados Relacional** (ex: H2 para desenvolvimento, PostgreSQL, MySQL para produção - a ser especificado conforme configuração)
-*   **JUnit 5** (para testes unitários e de integração)
+- **Java 21**: Versão mais recente da linguagem Java.
+- **Spring Boot 3.3.1**: Framework principal para a construção da aplicação.
+- **Spring Web**: Para a criação de endpoints REST.
+- **Spring Data JPA**: Para a persistência de dados de forma simplificada.
+- **Hibernate**: Implementação JPA para o mapeamento objeto-relacional.
+- **H2 Database**: Banco de dados em memória para desenvolvimento e testes.
+- **Maven**: Gerenciador de dependências e build do projeto.
+- **Springdoc OpenAPI (Swagger)**: Para documentação interativa da API.
+- **JUnit 5 & Mockito**: Para a escrita de testes de unidade e integração.
 
-## Estrutura do Projeto
+## Como Executar
 
-O projeto segue uma arquitetura em camadas típica de aplicações Spring Boot:
+### Pré-requisitos
 
-*   `br.com.petfamily.canilapi.model`: Contém as entidades JPA que representam o domínio da aplicação.
-*   `br.com.petfamily.canilapi.repository`: Interfaces do Spring Data JPA para interação com o banco de dados.
-*   `br.com.petfamily.canilapi.service`: Classes de serviço que contêm a lógica de negócios da aplicação.
-*   `br.com.petfamily.canilapi.controller`: (A ser criado) Controladores REST para expor os endpoints da API.
-*   `br.com.petfamily.canilapi.exception`: (Sugestão) Classes de exceção customizadas.
+- JDK 21 ou superior.
+- Apache Maven 3.8 ou superior.
+
+### Passos
+
+1.  **Clone o repositório:**
+   bash git clone <url-do-seu-repositorio>
+2.  **Navegue até o diretório do backend:**
+   bash cd br.PetFamily.CanilManager/ backend
+3. **Execute a aplicação com o Maven:**
+   bash mvn spring-boot:run
+4.  A API estará disponível em `http://localhost:8080`.
+
+## Documentação da API (Swagger)
+
+Após iniciar a aplicação, a documentação completa e interativa da API, gerada pelo Springdoc, pode ser acessada no seu navegador:
+
+➡️ **http://localhost:8080/swagger-ui.html**
+
+Lá você pode visualizar todos os endpoints, seus parâmetros, corpos de requisição e respostas, além de poder testá-los diretamente.
+
+## Endpoints da API
+
+A base da URL para todos os endpoints é `http://localhost:8080`.
+
+### Recurso: Cachorro (`/cachorros`)
+
+| Método | Endpoint                               | Descrição                                                              |
+| :----- | :------------------------------------- | :--------------------------------------------------------------------- |
+| `GET`  | `/cachorros`                           | Lista todos os cachorros de forma paginada.                            |
+| `GET`  | `/cachorros/todos`                     | Lista todos os cachorros (sem paginação).                              |
+| `GET`  | `/cachorros/{id}`                      | Busca um cachorro específico pelo seu ID.                              |
+| `POST` | `/cachorros`                           | Cria um novo cachorro.                                                 |
+| `PUT`  | `/cachorros/{id}`                      | Atualiza todos os dados de um cachorro.                                |
+| `PATCH`| `/cachorros/{id}`                      | Atualiza parcialmente os dados de um cachorro.                         |
+| `DELETE`| `/cachorros/{id}`                     | Deleta um cachorro.                                                    |
+| `POST` | `/cachorros/{id}/despesas`             | Adiciona uma nova despesa a um cachorro.                               |
+| `GET`  | `/cachorros/{id}/relatorio-financeiro` | Gera um relatório financeiro detalhado para um cachorro.               |
+
+#### Exemplo: Corpo da Requisição para `POST /cachorros`
+
+   json { "nome": "Rex", "sexo": "MACHO", "raca": "Pastor Alemão", "dataNascimento": "2023-01-15", "tutorId": 1 }
+
+#### Exemplo: Corpo da Requisição para `PATCH /cachorros/{id}`
+
+  json { "nome": "Rex Atualizado", "tutorId": 2 }
+
+## Testes
+
+O projeto possui uma suíte de testes para garantir a qualidade e o correto funcionamento da lógica de negócio e dos endpoints.
+
+- **Testes de Unidade**: Localizados em `src/test/java`, testam as classes de serviço de forma isolada usando Mockito.
+- **Testes de Integração**: Testam os controllers e o fluxo da API usando MockMvc e o contexto do Spring Boot.
+
+Para executar todos os testes, utilize o seguinte comando Maven:
+   bash mvn test
