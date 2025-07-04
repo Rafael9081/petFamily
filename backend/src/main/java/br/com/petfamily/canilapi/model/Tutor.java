@@ -33,6 +33,11 @@ public class Tutor {
         this.telefone = telefone;
     }
 
+    public Tutor(String nome, String email) {
+        this.nome = nome;
+        this.email = email;
+    }
+
     public Long getId() {
         return id;
     }

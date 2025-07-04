@@ -111,7 +111,7 @@ class CachorroTest {
         assertTrue(cachorroMacho.isFoiVendido());
         assertEquals(novoTutor, cachorroMacho.getTutor());
         assertEquals(venda, cachorroMacho.getRegistroVenda());
-        assertEquals(cachorroMacho, venda.getCachorroVendido());
+        assertEquals(cachorroMacho, venda.getCachorro());
     }
 
     @Test

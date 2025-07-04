@@ -1,8 +1,10 @@
 package br.com.petfamily.canilapi.controller;
 
+import br.com.petfamily.canilapi.controller.dto.TutorRequestDTO;
 import br.com.petfamily.canilapi.controller.dto.TutorResponseDTO;
 import br.com.petfamily.canilapi.model.Tutor;
 import br.com.petfamily.canilapi.service.TutorService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,16 +18,19 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class TutorController {
 
-    @Autowired
-    private TutorService tutorService;
+    private final TutorService tutorService;
+
+    public TutorController(TutorService tutorService) {
+        this.tutorService = tutorService;
+    }
 
     @PostMapping
-    public ResponseEntity<Tutor> criar(@RequestBody Tutor tutor, UriComponentsBuilder uriBuilder) {
-        Tutor novoTutor = tutorService.criar(tutor);
+    public ResponseEntity<TutorResponseDTO> criar(@RequestBody @Valid TutorRequestDTO dto, UriComponentsBuilder uriBuilder) {
+        Tutor novoTutor = tutorService.criar(dto);
 
         // Boa prática: Retornar o status 201 Created e a URL do novo recurso no header 'Location'
         URI uri = uriBuilder.path("/tutores/{id}").buildAndExpand(novoTutor.getId()).toUri();
-        return ResponseEntity.created(uri).body(novoTutor);
+        return ResponseEntity.created(uri).body(new TutorResponseDTO(novoTutor));
     }
 
     @GetMapping
@@ -41,9 +46,9 @@ public class TutorController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Tutor> atualizar(@PathVariable Long id, @RequestBody Tutor dadosTutor) {
-        Tutor tutorAtualizado = tutorService.atualizar(id, dadosTutor);
-        return ResponseEntity.ok(tutorAtualizado);
+    public ResponseEntity<TutorResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid TutorRequestDTO dto) {
+        Tutor tutorAtualizado = tutorService.atualizar(id, dto);
+        return ResponseEntity.ok(new TutorResponseDTO(tutorAtualizado));
     }
 
     @DeleteMapping("/{id}")

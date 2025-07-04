@@ -35,9 +35,9 @@ class VendaTest {
     void constructorAndGetters_ShouldSetValuesCorrectly() {
         // Assert
         assertEquals(10L, venda.getId());
-        assertEquals(1500.00, venda.getValorVenda());
-        assertEquals(dataVenda, venda.getDataVenda());
-        assertEquals(cachorroVendido, venda.getCachorroVendido());
+        assertEquals(1500.00, venda.getValor());
+        assertEquals(dataVenda, venda.getData());
+        assertEquals(cachorroVendido, venda.getCachorro());
         assertEquals(novoTutor, venda.getNovoTutor());
     }
 
@@ -52,15 +52,15 @@ class VendaTest {
         LocalDate outraData = LocalDate.now();
 
         // Act
-        venda.setValorVenda(2000.50);
-        venda.setDataVenda(outraData);
-        venda.setCachorroVendido(outroCachorro);
+        venda.setValor(2000.50);
+        venda.setData(outraData);
+        venda.setCachorro(outroCachorro);
         venda.setNovoTutor(outroTutor);
 
         // Assert
-        assertEquals(2000.50, venda.getValorVenda());
-        assertEquals(outraData, venda.getDataVenda());
-        assertEquals(outroCachorro, venda.getCachorroVendido());
+        assertEquals(2000.50, venda.getValor());
+        assertEquals(outraData, venda.getData());
+        assertEquals(outroCachorro, venda.getCachorro());
         assertEquals(outroTutor, venda.getNovoTutor());
     }
 

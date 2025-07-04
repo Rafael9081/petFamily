@@ -1,6 +1,7 @@
 package br.com.petfamily.canilapi.service;
 
-import br.com.petfamily.canilapi.model.Cachorro;
+import br.com.petfamily.canilapi.controller.dto.CachorroRequestDTO;
+import br.com.petfamily.canilapi.model.*;
 import br.com.petfamily.canilapi.repository.CachorroRepository;
 import br.com.petfamily.canilapi.repository.TutorRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,5 +68,77 @@ class CachorroServiceTest {
         assertThrows(EntityNotFoundException.class, () -> {
             cachorroService.buscarPorId(idInexistente);
         });
+    }
+
+    @Test
+    @DisplayName("Deve criar um cachorro com sucesso")
+    void criar_ComDadosValidos_DeveRetornarCachorroSalvo() {
+        // Arrange
+        Tutor tutor = new Tutor();
+        tutor.setId(1L);
+        CachorroRequestDTO dto = new CachorroRequestDTO("Rex", null, "Vira-lata", null, tutor.getId());
+
+        when(tutorRepository.findById(1L)).thenReturn(Optional.of(tutor));
+        when(cachorroRepository.save(any(Cachorro.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        Cachorro cachorroCriado = cachorroService.criar(dto);
+
+        // Assert
+        assertNotNull(cachorroCriado);
+        assertEquals("Rex", cachorroCriado.getNome());
+        assertEquals(tutor, cachorroCriado.getTutor());
+        verify(cachorroRepository).save(any(Cachorro.class));
+    }
+
+    @Test
+    @DisplayName("Deve gerar relatório financeiro para cachorro vendido com lucro")
+    void gerarRelatorioFinanceiro_ParaCachorroVendido_DeveCalcularLucro() {
+        // Arrange
+        Cachorro cachorro = new Cachorro();
+        cachorro.setId(1L);
+        cachorro.setNome("Fido");
+
+        // Adiciona despesas
+        cachorro.adicionarDespesa(new Despesa("Ração", 100.0, LocalDate.now(), CategoriaDespesa.ALIMENTACAO));
+        cachorro.adicionarDespesa(new Despesa("Vacina", 50.0, LocalDate.now(), CategoriaDespesa.SAUDE));
+
+        // Simula a venda
+        Venda venda = new Venda(500.0, LocalDate.now(), cachorro, new Tutor());
+        cachorro.realizarVenda(venda);
+
+        when(cachorroRepository.findById(1L)).thenReturn(Optional.of(cachorro));
+
+        // Act
+        br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO relatorio = cachorroService.gerarRelatorioFinanceiro(1L);
+
+        // Assert
+        assertNotNull(relatorio);
+        assertEquals(150.0, relatorio.getCustoTotal());
+        assertTrue(relatorio.isFoiVendido());
+        assertNotNull(relatorio.getRegistroVenda());
+        assertEquals(500.0, relatorio.getRegistroVenda().valor());
+        assertEquals(350.0, relatorio.getLucro()); // 500 (venda) - 150 (custo)
+    }
+
+    @Test
+    @DisplayName("Deve gerar relatório financeiro para cachorro não vendido")
+    void gerarRelatorioFinanceiro_ParaCachorroNaoVendido_NaoDeveTerLucro() {
+        // Arrange
+        Cachorro cachorro = new Cachorro();
+        cachorro.setId(1L);
+        cachorro.adicionarDespesa(new Despesa("Brinquedo", 30.0, LocalDate.now(), CategoriaDespesa.OUTROS));
+
+        when(cachorroRepository.findById(1L)).thenReturn(Optional.of(cachorro));
+
+        // Act
+        br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO relatorio = cachorroService.gerarRelatorioFinanceiro(1L);
+
+        // Assert
+        assertNotNull(relatorio);
+        assertEquals(30.0, relatorio.getCustoTotal());
+        assertFalse(relatorio.isFoiVendido());
+        assertNull(relatorio.getRegistroVenda());
+        assertNull(relatorio.getLucro());
     }
 }

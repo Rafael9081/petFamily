@@ -1,5 +1,6 @@
 package br.com.petfamily.canilapi.service;
 
+import br.com.petfamily.canilapi.controller.dto.TutorRequestDTO;
 import br.com.petfamily.canilapi.controller.dto.TutorResponseDTO;
 import br.com.petfamily.canilapi.model.Tutor;
 import br.com.petfamily.canilapi.repository.CachorroRepository;
@@ -10,14 +11,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class TutorService {
 
-    @Autowired
-    private TutorRepository tutorRepository;
+    private final  TutorRepository tutorRepository;
+
+    public TutorService(TutorRepository tutorRepository) {
+        this.tutorRepository = tutorRepository;
+    }
 
     @Autowired
     private CachorroRepository cachorroRepository;
@@ -39,28 +42,24 @@ public class TutorService {
     }
 
     @Transactional
-    public Tutor criar(Tutor tutor) {
-        if (tutor.getNome() == null || tutor.getNome().trim().isEmpty()) {
-            throw new IllegalArgumentException("O nome do tutor não pode ser vazio.");
-        }
-        return tutorRepository.save(tutor);
+    public Tutor criar(TutorRequestDTO dto) {
+        Tutor novoTutor = new Tutor();
+        // 2. Preenche a entidade com os dados que vieram do DTO.
+        novoTutor.setNome(dto.nome());
+        novoTutor.setEmail(dto.email());
+        // 3. Salva a nova entidade no banco.
+        return tutorRepository.save(novoTutor);
     }
 
     @Transactional
-    public Tutor atualizar(Long id, Tutor dadosTutor) {
-        Tutor tutorExistente = buscarPorId(id); // Reutiliza a busca que já lança exceção
+    public Tutor atualizar(Long id, TutorRequestDTO dto) {
+        Tutor tutorExistente = tutorRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com o ID: " + id));
 
-        if (dadosTutor.getNome() != null && !dadosTutor.getNome().trim().isEmpty()) {
-            tutorExistente.setNome(dadosTutor.getNome());
-        }
-        if (dadosTutor.getEmail() != null) {
-            tutorExistente.setEmail(dadosTutor.getEmail());
-        }
-        if (dadosTutor.getTelefone() != null) {
-            tutorExistente.setTelefone(dadosTutor.getTelefone());
-        }
+        tutorExistente.setNome(dto.nome());
+        tutorExistente.setEmail(dto.email());
 
-        return tutorRepository.save(tutorExistente);
+        return tutorExistente;
     }
 
     @Transactional
