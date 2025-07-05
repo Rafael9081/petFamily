@@ -1,41 +1,40 @@
-# Use uma imagem base que já tenha Java e Maven instalados
-FROM openjdk:17-jdk-slim as builder
+# --- Estágio 1: O Construtor (Builder) ---
+# Usamos uma imagem oficial do Maven que já vem com o Java 21 (especificado no seu pom.xml).
+# Esta imagem é grande, mas só será usada para compilar o projeto.
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
-# Define o diretório de trabalho dentro do contêiner
+# Define o diretório de trabalho dentro do container
 WORKDIR /app
 
-# Copia o arquivo pom.xml para que o Maven possa baixar as dependências
-# Isso otimiza o cache do Docker, pois as dependências não serão baixadas novamente
-# se apenas o código-fonte mudar
+# Copia apenas o pom.xml primeiro. Isso é um truque de cache do Docker.
+# Se as dependências não mudarem, o Docker reutiliza a camada já baixada,
+# tornando as construções futuras muito mais rápidas.
 COPY pom.xml .
-
-# Baixa as dependências do Maven para otimizar o cache
-# Isso garante que as dependências estejam disponíveis antes de copiar o código-fonte completo
 RUN mvn dependency:go-offline
 
-# Copia todo o código-fonte do projeto para o contêiner
-# Esta linha estava comentada no seu Dockerfile anterior e é essencial!
+# Agora copia o resto do cdigo-fonte do seu projeto
 COPY src ./src
 
-# Compila o projeto Spring Boot e empacota em um JAR
-# O -DskipTests é opcional, mas útil para builds de deploy
-RUN mvn clean install -DskipTests
+# Executa o build do Maven para gerar o arquivo .jar.
+# -DskipTests pula a execução dos testes, o que é uma prática comum para builds de deploy.
+RUN mvn package -DskipTests
 
-# --- Segunda Stage: Imagem de Runtime Menor ---
-# Usa uma imagem base menor, ideal para rodar a aplicação em produção
-FROM openjdk:17-jre-slim
+# --- Estágio 2: A Execução (Runner) ---
+# Agora, usamos uma imagem muito menor, que contém apenas o Java 21 para EXECUTAR a aplicação.
+# Não precisamos mais do Maven nem do código-fonte, apenas do .jar compilado.
+FROM eclipse-temurin:21-jre-jammy
 
 # Define o diretório de trabalho
 WORKDIR /app
 
-# Copia o JAR compilado da stage "builder" para esta nova imagem
-# Lembre-se de verificar o nome exato do seu JAR na pasta 'target/'
-# Ex: se o JAR for 'backend-0.0.1-SNAPSHOT.jar', use 'backend-0.0.1-SNAPSHOT.jar'
-# Ou use 'app.jar' e seu ENTRYPOINT precisa ser 'app.jar'
-COPY --from=builder /app/target/*.jar app.jar
+# Copia APENAS o arquivo .jar que foi gerado no estágio "builder" para dentro da nossa imagem final.
+# Note que o nome do .jar é baseado no <artifactId> e <version> do seu pom.xml.
+COPY --from=builder /app/target/canil-api-0.0.1-SNAPSHOT.jar app.jar
 
-# Expõe a porta que sua aplicação Spring Boot usa (padrão é 8080)
+# Expõe a porta 8080, que é a porta padrão do Spring Boot.
+# O Render vai detectar isso e direcionar o tráfego para ela.
 EXPOSE 8080
 
-# Comando para rodar a aplicação Spring Boot quando o contêiner iniciar
+# Define o comando que será executado quando o container iniciar.
+# Ele simplesmente executa a sua aplicação Spring Boot.
 ENTRYPOINT ["java", "-jar", "app.jar"]
