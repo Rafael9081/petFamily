@@ -17,6 +17,7 @@ public class Despesa {
 
     private String descricao;
     private double valor;
+    @Column(name = "data_despesa")
     private LocalDate data;
 
     @Enumerated(EnumType.STRING)
