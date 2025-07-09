@@ -40,7 +40,7 @@ public class CachorroService {
     }
 
     public Cachorro buscarPorId(Long id) {
-        return cachorroRepository.findById(id)
+        return cachorroRepository.findByIdWithAssociations(id)
                 .orElseThrow(() -> new EntityNotFoundException("Cachorro não encontrado com ID: " + id));
     }
 

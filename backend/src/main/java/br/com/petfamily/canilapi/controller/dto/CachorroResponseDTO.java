@@ -1,6 +1,7 @@
 package br.com.petfamily.canilapi.controller.dto;
 
 import br.com.petfamily.canilapi.model.Cachorro;
+import br.com.petfamily.canilapi.model.Sexo;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 public record CachorroResponseDTO(
         Long id,
         String nome,
+        Sexo sexo,
         String raca,
         LocalDate dataNascimento,
         boolean foiVendido,
@@ -20,6 +22,7 @@ public record CachorroResponseDTO(
         this(
                 cachorro.getId(),
                 cachorro.getNome(),
+                cachorro.getSexo(),
                 cachorro.getRaca(),
                 cachorro.getDataNascimento(),
                 cachorro.isFoiVendido(),
