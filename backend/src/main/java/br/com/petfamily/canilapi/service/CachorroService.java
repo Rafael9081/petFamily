@@ -145,19 +145,19 @@ public class CachorroService {
 
     @Transactional
     public Cachorro atualizarParcial(Long id, Map<String, Object> campos) {
-        Cachorro cachorroSalvo = buscarPorId(id);
+        Cachorro cachorroParaAtualizar = buscarPorId(id);
 
         try {
-            Cachorro cachorroAtualizado = objectMapper.updateValue(cachorroSalvo, campos);
+            objectMapper.updateValue(cachorroParaAtualizar, campos);
 
             if (campos.containsKey("tutorId")) {
                 Long novoTutorId = Long.valueOf(campos.get("tutorId").toString());
                 Tutor novoTutor = tutorRepository.findById(novoTutorId)
                         .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com ID: " + novoTutorId));
-                cachorroAtualizado.setTutor(novoTutor);
+                cachorroParaAtualizar.setTutor(novoTutor);
             }
+            return cachorroRepository.save(cachorroParaAtualizar);
 
-            return this.buscarPorId(id);
         } catch (MismatchedInputException e) {
             throw new IllegalStateException("Tipo de dado inválido para o campo: " + e.getPath().get(0).getFieldName(), e);
         } catch (Exception e) {
