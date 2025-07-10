@@ -52,7 +52,7 @@ public class CachorroService {
 
     @Transactional(readOnly = true)
     public List<Cachorro> listarTodos() {
-        return cachorroRepository.findAll();
+        return cachorroRepository.findAllWithAssociations();
     }
 
     @Transactional
@@ -105,12 +105,15 @@ public class CachorroService {
         return cachorroRepository.save(cachorro);
     }
 
-    // --- NOVO MÉTODO ---
     @Transactional(readOnly = true)
     public Page<Cachorro> listarTodosPaginado(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return cachorroRepository.findAll(pageable);
+        Page<Cachorro> cachorrosPage = cachorroRepository.findAllWithTutor(pageable);
+        cachorrosPage.getContent().forEach(cachorro -> cachorro.getHistoricoDespesas().size());
+
+        return cachorrosPage;
     }
+
 
     @Transactional(readOnly = true)
     public RelatorioFinanceiroDTO gerarRelatorioFinanceiro(Long id) {
@@ -148,7 +151,6 @@ public class CachorroService {
         Cachorro cachorroSalvo = buscarPorId(id);
 
         try {
-
             Cachorro cachorroAtualizado = objectMapper.updateValue(cachorroSalvo, campos);
 
             if (campos.containsKey("tutorId")) {
@@ -158,7 +160,7 @@ public class CachorroService {
                 cachorroAtualizado.setTutor(novoTutor);
             }
 
-            return cachorroRepository.save(cachorroAtualizado);
+            return this.buscarPorId(id);
         } catch (MismatchedInputException e) {
             throw new IllegalStateException("Tipo de dado inválido para o campo: " + e.getPath().get(0).getFieldName(), e);
         } catch (Exception e) {
