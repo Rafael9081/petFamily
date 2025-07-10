@@ -39,7 +39,7 @@ public class VendaService {
         Tutor novoTutor = tutorRepository.findById(dto.novoTutorId())
                 .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com ID: " + dto.novoTutorId()));
 
-        Venda novaVenda = new Venda(dto.valor(), dto.dataVenda(), cachorro, novoTutor);
+        Venda novaVenda = new Venda(dto.valor(), dto.data(), cachorro, novoTutor);
         cachorro.setFoiVendido(true);
         cachorro.setTutor(novoTutor);
         cachorro.setRegistroVenda(novaVenda);

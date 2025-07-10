@@ -16,6 +16,6 @@ public record VendaRequestDTO(
 
         @NotNull(message = "A data da venda é obrigatória.")
         @PastOrPresent(message = "A data da venda não pode ser no futuro.") // Validação extra útil.
-        LocalDate dataVenda
+        LocalDate data
 ) {
 }
