@@ -1,9 +1,6 @@
 package br.com.petfamily.canilapi.service;
 
-import br.com.petfamily.canilapi.controller.dto.DespesaInfoDTO;
-import br.com.petfamily.canilapi.controller.dto.VendaResponseDTO;
-import br.com.petfamily.canilapi.controller.dto.CachorroRequestDTO;
-import br.com.petfamily.canilapi.controller.dto.DespesaRequestDTO;
+import br.com.petfamily.canilapi.controller.dto.*;
 import br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO; // 1. Importe o novo DTO
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.Despesa;
@@ -167,4 +164,5 @@ public class CachorroService {
             throw new RuntimeException("Erro ao atualizar os dados do cachorro.", e);
         }
     }
+
 }

@@ -3,6 +3,7 @@ package br.com.petfamily.canilapi.controller;
 import br.com.petfamily.canilapi.controller.dto.CachorroRequestDTO;
 import br.com.petfamily.canilapi.controller.dto.CachorroResponseDTO;
 import br.com.petfamily.canilapi.controller.dto.DespesaRequestDTO;
+import br.com.petfamily.canilapi.controller.dto.VendaRequestDTO;
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.Despesa;
 import br.com.petfamily.canilapi.service.CachorroService;
@@ -96,6 +97,12 @@ public class CachorroController {
             @RequestBody Map<String, Object> campos) {
         Cachorro cachorro = cachorroService.atualizarParcial(id, campos);
         return ResponseEntity.ok(new CachorroResponseDTO(cachorro));
+    }
+
+    @PostMapping("/{id}/vender")
+    public ResponseEntity<CachorroResponseDTO> vender(@PathVariable Long id, @RequestBody @Valid VendaRequestDTO dto) {
+        Cachorro cachorroVendido = cachorroService.venderCachorro(id, dto);
+        return ResponseEntity.ok(new CachorroResponseDTO(cachorroVendido));
     }
 
 
