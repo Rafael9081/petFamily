@@ -1,12 +1,10 @@
 package br.com.petfamily.canilapi.controller;
 
-import br.com.petfamily.canilapi.controller.dto.CachorroRequestDTO;
-import br.com.petfamily.canilapi.controller.dto.CachorroResponseDTO;
-import br.com.petfamily.canilapi.controller.dto.DespesaRequestDTO;
-import br.com.petfamily.canilapi.controller.dto.VendaRequestDTO;
+import br.com.petfamily.canilapi.controller.dto.*;
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.Despesa;
 import br.com.petfamily.canilapi.service.CachorroService;
+import br.com.petfamily.canilapi.service.VendaService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +13,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import br.com.petfamily.canilapi.model.Venda;
 
 
 @RestController
@@ -24,9 +23,11 @@ public class CachorroController {
 
     // 1. Injeção de dependência via construtor (melhor prática)
     private final CachorroService cachorroService;
+    private final VendaService vendaService;
 
-    public CachorroController(CachorroService cachorroService) {
+    public CachorroController(CachorroService cachorroService, VendaService vendaService) {
         this.cachorroService = cachorroService;
+        this.vendaService = vendaService;
     }
 
     @GetMapping
@@ -100,9 +101,9 @@ public class CachorroController {
     }
 
     @PostMapping("/{id}/vender")
-    public ResponseEntity<CachorroResponseDTO> vender(@PathVariable Long id, @RequestBody @Valid VendaRequestDTO dto) {
-        Cachorro cachorroVendido = cachorroService.venderCachorro(id, dto);
-        return ResponseEntity.ok(new CachorroResponseDTO(cachorroVendido));
+    public ResponseEntity<VendaResponseDTO> vender(@PathVariable Long id, @RequestBody @Valid VendaRequestDTO dto) {
+       Venda vendaRealizada = vendaService.realizarVenda(id, dto);
+        return ResponseEntity.ok(new VendaResponseDTO(vendaRealizada));
     }
 
 

@@ -9,8 +9,7 @@ public record VendaResponseDTO(
         LocalDate data,
         Long cachorroId,
         String cachorroNome,
-        Long tutorId,
-        String tutorNome
+        TutorInfoDTO novoTutor
 ) {
     // Este construtor agora funciona perfeitamente com a entidade Venda refatorada.
     public VendaResponseDTO(Venda venda) {
@@ -20,8 +19,7 @@ public record VendaResponseDTO(
                 venda.getData(),
                 venda.getCachorro().getId(),
                 venda.getCachorro().getNome(),
-                venda.getNovoTutor().getId(),
-                venda.getNovoTutor().getNome()
+                new TutorInfoDTO(venda.getNovoTutor().getId(), venda.getNovoTutor().getNome())
         );
     }
 }
