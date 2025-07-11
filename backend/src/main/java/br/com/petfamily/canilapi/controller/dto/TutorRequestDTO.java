@@ -10,5 +10,8 @@ public record TutorRequestDTO(
 
         @NotBlank(message = "O email não pode estar em branco")
         @Email(message = "O formato do email é inválido")
-        String email
+        String email,
+
+        @NotBlank(message = "O telefone não pode estar em branco")
+        String telefone
 ) {}

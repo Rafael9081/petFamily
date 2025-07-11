@@ -47,6 +47,7 @@ public class TutorService {
         // 2. Preenche a entidade com os dados que vieram do DTO.
         novoTutor.setNome(dto.nome());
         novoTutor.setEmail(dto.email());
+        novoTutor.setTelefone(dto.telefone());
         // 3. Salva a nova entidade no banco.
         return tutorRepository.save(novoTutor);
     }

@@ -11,7 +11,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CachorroRepository extends JpaRepository<Cachorro, Long> {
-    @Query("SELECT c FROM Cachorro c LEFT JOIN FETCH c.tutor LEFT JOIN FETCH c.historicoDespesas WHERE c.id = :id")
+    @Query("SELECT c FROM Cachorro c " +
+            "LEFT JOIN FETCH c.tutor " +
+            "LEFT JOIN FETCH c.historicoDespesas " +
+            "LEFT JOIN FETCH c.registroVenda " +
+            "WHERE c.id = :id")
     Optional<Cachorro> findByIdWithAssociations(@Param("id") Long id);
 
     @Query(value = "SELECT DISTINCT c FROM Cachorro c LEFT JOIN FETCH c.tutor",
