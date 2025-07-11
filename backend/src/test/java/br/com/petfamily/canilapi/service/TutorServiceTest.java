@@ -34,7 +34,7 @@ class TutorServiceTest {
     void criar_ComDadosValidos_DeveRetornarTutorSalvo() {
         // Arrange
         // 1. CORREÇÃO: Criamos o DTO que o serviço espera receber.
-        TutorRequestDTO requestDTO = new TutorRequestDTO("João da Silva", "joao@email.com");
+        TutorRequestDTO requestDTO = new TutorRequestDTO("João da Silva", "joao@email.com", "11987654321");
 
         // Simula o que o repositório fará: salvar e retornar uma entidade com ID.
         when(tutorRepository.save(any(Tutor.class))).thenAnswer(invocation -> {
@@ -63,7 +63,7 @@ class TutorServiceTest {
     void atualizar_ComDadosValidos_DeveRetornarTutorAtualizado() {
         // Arrange
         // 1. CORREÇÃO: Criamos o DTO com os dados da atualização.
-        TutorRequestDTO requestDTO = new TutorRequestDTO("João da Silva Santos", "joao.santos@novoemail.com");
+        TutorRequestDTO requestDTO = new TutorRequestDTO("João da Silva Santos", "joao.santos@novoemail.com", "11987654321");
 
         // Prepara o tutor que já existe no "banco"
         Tutor tutorExistente = new Tutor();

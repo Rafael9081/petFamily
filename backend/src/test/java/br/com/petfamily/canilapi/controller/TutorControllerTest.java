@@ -41,7 +41,7 @@ class TutorControllerTest {
     @DisplayName("Deve criar um tutor com sucesso e retornar 201 Created")
     void criar_ComDadosValidos_DeveRetornar201() throws Exception {
         // Arrange
-        TutorRequestDTO requestDTO = new TutorRequestDTO("Ana Zaira", "ana.zaira@email.com");
+        TutorRequestDTO requestDTO = new TutorRequestDTO("Ana Zaira", "ana.zaira@email.com", "11987654321");
         String jsonRequest = objectMapper.writeValueAsString(requestDTO);
 
         // Act & Assert
@@ -58,7 +58,7 @@ class TutorControllerTest {
     @DisplayName("Deve retornar 400 Bad Request ao tentar criar tutor com email inválido")
     void criar_ComEmailInvalido_DeveRetornar400() throws Exception {
         // Arrange
-        TutorRequestDTO requestDTO = new TutorRequestDTO("Ana Zaira", "email-invalido");
+        TutorRequestDTO requestDTO = new TutorRequestDTO("Ana Zaira", "email-invalido", "123456789");
         String jsonRequest = objectMapper.writeValueAsString(requestDTO);
 
         // Act & Assert
