@@ -1,4 +1,4 @@
-package br.com.petfamily.canilapi.dto;
+package br.com.petfamily.canilapi.controller.dto;
 
 import br.com.petfamily.canilapi.controller.dto.DespesaInfoDTO;
 import br.com.petfamily.canilapi.controller.dto.VendaResponseDTO;

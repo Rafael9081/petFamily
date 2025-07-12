@@ -78,8 +78,8 @@ public class CachorroController {
     }
 
     @GetMapping("/{id}/relatorio-financeiro")
-    public ResponseEntity<br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO> getRelatorioFinanceiro(@PathVariable Long id) {
-        br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO relatorio = cachorroService.gerarRelatorioFinanceiro(id);
+    public ResponseEntity<br.com.petfamily.canilapi.controller.dto.RelatorioFinanceiroDTO> getRelatorioFinanceiro(@PathVariable Long id) {
+        br.com.petfamily.canilapi.controller.dto.RelatorioFinanceiroDTO relatorio = cachorroService.gerarRelatorioFinanceiro(id);
         return ResponseEntity.ok(relatorio);
     }
 

@@ -1,7 +1,7 @@
 package br.com.petfamily.canilapi.service;
 
 import br.com.petfamily.canilapi.controller.dto.*;
-import br.com.petfamily.canilapi.dto.RelatorioFinanceiroDTO; // 1. Importe o novo DTO
+// 1. Importe o novo DTO
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.Despesa;
 import br.com.petfamily.canilapi.model.Tutor;
