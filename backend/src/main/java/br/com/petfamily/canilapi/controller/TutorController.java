@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/tutores") // Todas as requisições para /tutores cairão neste controller
-@CrossOrigin(origins = "*")
 public class TutorController {
 
     private final TutorService tutorService;

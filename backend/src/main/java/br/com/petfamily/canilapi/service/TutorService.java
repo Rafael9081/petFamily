@@ -17,13 +17,12 @@ import java.util.stream.Collectors;
 public class TutorService {
 
     private final  TutorRepository tutorRepository;
+    private final CachorroRepository cachorroRepository;
 
-    public TutorService(TutorRepository tutorRepository) {
+    public TutorService(TutorRepository tutorRepository, CachorroRepository cachorroRepository) {
         this.tutorRepository = tutorRepository;
+        this.cachorroRepository = cachorroRepository;
     }
-
-    @Autowired
-    private CachorroRepository cachorroRepository;
 
     public List<Tutor> listarTodos() {
         return tutorRepository.findAll();
@@ -59,6 +58,7 @@ public class TutorService {
 
         tutorExistente.setNome(dto.nome());
         tutorExistente.setEmail(dto.email());
+        tutorExistente.setTelefone(dto.telefone());
 
         return tutorExistente;
     }

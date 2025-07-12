@@ -51,7 +51,8 @@ class TutorControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.nome").value("Ana Zaira"))
-                .andExpect(jsonPath("$.email").value("ana.zaira@email.com"));
+                .andExpect(jsonPath("$.email").value("ana.zaira@email.com"))
+                .andExpect(jsonPath("$.telefone").value("11987654321"));
     }
 
     @Test
@@ -72,13 +73,16 @@ class TutorControllerTest {
     @DisplayName("Deve buscar um tutor por ID e retornar 200 OK")
     void buscarPorId_ComIdExistente_DeveRetornar200() throws Exception {
         // Arrange: Salva um tutor no banco para poder buscá-lo
-        Tutor tutorSalvo = tutorRepository.save(new Tutor("Carlos Pereira", "carlos@email.com"));
+        Tutor tutorParaSalvar = tutorRepository.save(new Tutor("Carlos Pereira", "carlos@email.com"));
+        tutorParaSalvar.setTelefone("21999998888");
+        Tutor tutorSalvo = tutorRepository.save(tutorParaSalvar); // Atualiza o telefone
 
         // Act & Assert
         mockMvc.perform(get("/tutores/{id}", tutorSalvo.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(tutorSalvo.getId()))
-                .andExpect(jsonPath("$.nome").value("Carlos Pereira"));
+                .andExpect(jsonPath("$.nome").value("Carlos Pereira"))
+                .andExpect(jsonPath("$.telefone").value("21999998888"));
     }
 
     @Test
