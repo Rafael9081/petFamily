@@ -6,6 +6,9 @@ import br.com.petfamily.canilapi.model.Tutor;
 import br.com.petfamily.canilapi.service.TutorService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -33,9 +36,9 @@ public class TutorController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TutorResponseDTO>> listarTodos() {
-        List<TutorResponseDTO> tutores = tutorService.listarTodosDTO();
-        return ResponseEntity.ok(tutores); // Retorna 200 OK com a lista de tutores
+    public ResponseEntity<Page<TutorResponseDTO>> listarPaginados(@PageableDefault(size = 10, sort = "nome") Pageable pageable) {
+        Page<TutorResponseDTO> paginaDeTutores = tutorService.listarTodosPaginado(pageable);
+        return ResponseEntity.ok(paginaDeTutores);
     }
 
     @GetMapping("/{id}")
@@ -46,8 +49,11 @@ public class TutorController {
 
     @PutMapping("/{id}")
     public ResponseEntity<TutorResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid TutorRequestDTO dto) {
-        Tutor tutorAtualizado = tutorService.atualizar(id, dto);
-        return ResponseEntity.ok(new TutorResponseDTO(tutorAtualizado));
+        // 1. O serviço agora retorna o DTO diretamente
+        TutorResponseDTO tutorAtualizadoDTO = tutorService.atualizar(id, dto);
+
+        // 2. Simplesmente retorne o DTO recebido com o status OK
+        return ResponseEntity.ok(tutorAtualizadoDTO);
     }
 
     @DeleteMapping("/{id}")

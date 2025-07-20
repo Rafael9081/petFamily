@@ -2,6 +2,7 @@ package br.com.petfamily.canilapi.controller.dto;
 
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.Sexo;
+import br.com.petfamily.canilapi.model.StatusCachorro;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,6 +14,7 @@ public record CachorroResponseDTO(
         Sexo sexo,
         String raca,
         LocalDate dataNascimento,
+        StatusCachorro status,
         boolean foiVendido,
         TutorInfoDTO tutor,
         List<DespesaInfoDTO> despesas
@@ -25,6 +27,7 @@ public record CachorroResponseDTO(
                 cachorro.getSexo(),
                 cachorro.getRaca(),
                 cachorro.getDataNascimento(),
+                cachorro.getStatus(),
                 cachorro.isFoiVendido(),
                 // Mapeia o tutor, se existir
                 cachorro.getTutor() != null ? new TutorInfoDTO(cachorro.getTutor().getId(), cachorro.getTutor().getNome()) : null,

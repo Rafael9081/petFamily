@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record VendaRequestDTO(
@@ -12,7 +13,7 @@ public record VendaRequestDTO(
 
         @NotNull(message = "O valor da venda é obrigatório.")
         @Positive(message = "O valor da venda deve ser positivo.")
-        Double valor,
+        BigDecimal valor,
 
         @NotNull(message = "A data da venda é obrigatória.")
         @PastOrPresent(message = "A data da venda não pode ser no futuro.") // Validação extra útil.

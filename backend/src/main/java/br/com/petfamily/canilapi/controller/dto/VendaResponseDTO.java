@@ -1,11 +1,13 @@
 package br.com.petfamily.canilapi.controller.dto;
 
 import br.com.petfamily.canilapi.model.Venda;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record VendaResponseDTO(
         Long id,
-        Double valor,
+        BigDecimal valor,
         LocalDate data,
         Long cachorroId,
         String cachorroNome,
@@ -16,7 +18,7 @@ public record VendaResponseDTO(
         this(
                 venda.getId(),
                 venda.getValor(),
-                venda.getData(),
+                venda.getDataVenda(),
                 venda.getCachorro().getId(),
                 venda.getCachorro().getNome(),
                 new TutorInfoDTO(venda.getNovoTutor().getId(), venda.getNovoTutor().getNome())

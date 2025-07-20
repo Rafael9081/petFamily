@@ -1,0 +1,136 @@
+/* --- Variáveis de Cor e Tipografia Base --- */
+:root {
+  --primary-color: #007bff;
+  --secondary-color: #6c757d;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --info-color: #17a2b8;
+  --light-gray: #f8f9fa;
+  --border-color: #dee2e6;
+  --text-color-dark: #212529; /* Cor de texto escura e legível */
+  --text-color-light: #6c757d; /* Cor de texto secundária, mais clara mas ainda legível */
+  --background-color: #f4f7f6;
+  --card-background: #ffffff;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --border-radius: 8px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color-dark); /* Aplicando a cor de fonte legível globalmente */
+  margin: 0;
+}
+
+/* --- Estilos de Layout e Contêineres --- */
+.view-container, .form-view {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 2rem;
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.view-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+/* --- Estilos de Botões Padronizados --- */
+.btn, .btn-primary, .btn-secondary, .btn-details {
+  display: inline-block;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:disabled, .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-secondary { background-color: var(--secondary-color); color: white; }
+.btn-details { background-color: var(--info-color); color: white; padding: 0.5rem 1rem; font-size: 0.9rem; }
+.btn-remove {
+  background: none;
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
+  padding: 0.5rem 1rem;
+}
+
+/* --- Estilos de Alertas --- */
+.alert {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--border-radius);
+  border: 1px solid transparent;
+}
+.alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+.alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+
+/* --- Estilos de Tabelas --- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--card-background);
+  box-shadow: var(--shadow);
+  border-radius: var(--border-radius);
+  overflow: hidden; /* Garante que o border-radius aplique nos cantos da tabela */
+}
+.table th, .table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+.table th {
+  background-color: var(--light-gray);
+  font-weight: 600;
+  color: var(--text-color-dark);
+}
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* --- Estilos de Cards (para listas) --- */
+.card {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.card-body { padding: 1.5rem; flex-grow: 1; }
+.card-footer { padding: 1rem 1.5rem; background-color: var(--light-gray); text-align: right; }
+
+/* --- Estados Visuais --- */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-color-light);
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+}

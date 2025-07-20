@@ -1,16 +1,17 @@
 package br.com.petfamily.canilapi.service;
 
 import br.com.petfamily.canilapi.controller.dto.*;
-// 1. Importe o novo DTO
-import br.com.petfamily.canilapi.model.Cachorro;
-import br.com.petfamily.canilapi.model.Despesa;
-import br.com.petfamily.canilapi.model.Tutor;
+import br.com.petfamily.canilapi.infra.exception.ResourceNotFoundException;
+import br.com.petfamily.canilapi.model.*;
 import br.com.petfamily.canilapi.repository.CachorroRepository;
+import br.com.petfamily.canilapi.repository.NinhadaRepository;
 import br.com.petfamily.canilapi.repository.TutorRepository;
-import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
@@ -29,16 +29,18 @@ public class CachorroService {
     private final CachorroRepository cachorroRepository;
     private final TutorRepository tutorRepository;
     private final ObjectMapper objectMapper;
+    private final NinhadaRepository ninhadaRepository;
 
-    public CachorroService(CachorroRepository cachorroRepository, TutorRepository tutorRepository, ObjectMapper objectMapper) {
+    public CachorroService(CachorroRepository cachorroRepository,NinhadaRepository ninhadaRepository, TutorRepository tutorRepository, ObjectMapper objectMapper) {
         this.cachorroRepository = cachorroRepository;
         this.tutorRepository = tutorRepository;
         this.objectMapper = objectMapper;
+        this.ninhadaRepository = ninhadaRepository;
     }
 
     public Cachorro buscarPorId(Long id) {
         return cachorroRepository.findByIdWithAssociations(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cachorro não encontrado com ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Cachorro não encontrado com ID: " + id));
     }
 
     @Transactional
@@ -55,7 +57,7 @@ public class CachorroService {
     @Transactional
     public Cachorro criar(CachorroRequestDTO dto) {
         Tutor tutor = tutorRepository.findById(dto.tutorId())
-                .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com ID: " + dto.tutorId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor não encontrado com ID: " + dto.tutorId()));
 
         Cachorro novoCachorro = new Cachorro();
         novoCachorro.setNome(dto.nome());
@@ -63,7 +65,18 @@ public class CachorroService {
         novoCachorro.setDataNascimento(dto.dataNascimento());
         novoCachorro.setSexo(dto.sexo());
         novoCachorro.setTutor(tutor);
+        novoCachorro.setStatus(StatusCachorro.DISPONIVEL);
+        return cachorroRepository.save(novoCachorro);
+    }
 
+    @Transactional
+    public Cachorro criar(CachorroPostRequestDTO dto) {
+        Cachorro novoCachorro = new Cachorro();
+        novoCachorro.setNome(dto.nome());
+        novoCachorro.setRaca(dto.raca());
+        novoCachorro.setDataNascimento(dto.dataNascimento());
+        novoCachorro.setSexo(dto.sexo());
+        novoCachorro.setStatus(StatusCachorro.DISPONIVEL);
         return cachorroRepository.save(novoCachorro);
     }
 
@@ -89,7 +102,7 @@ public class CachorroService {
 
         // Busca o tutor para garantir que ele existe
         Tutor tutor = tutorRepository.findById(dto.tutorId())
-                .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com ID: " + dto.tutorId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor não encontrado com ID: " + dto.tutorId()));
 
         // Atualiza os campos da entidade com os dados do DTO
         cachorro.setNome(dto.nome());
@@ -102,13 +115,27 @@ public class CachorroService {
         return cachorroRepository.save(cachorro);
     }
 
-    @Transactional(readOnly = true)
-    public Page<Cachorro> listarTodosPaginado(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Cachorro> cachorrosPage = cachorroRepository.findAllWithTutor(pageable);
-        cachorrosPage.getContent().forEach(cachorro -> cachorro.getHistoricoDespesas().size());
+    public Page<CachorroResponseDTO> listarTodosPaginado(Pageable pageable) {
+        // 1. Busca a página de entidades (sem as coleções ToMany)
+        Page<Cachorro> cachorrosPage = cachorroRepository.findByPage(pageable);
 
-        return cachorrosPage;
+        // 2. Extrai os IDs da página atual de forma mais concisa
+        List<Long> ids = cachorrosPage.map(Cachorro::getId).getContent();
+
+        if (ids.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // 3. Busca as entidades completas com as coleções, mas apenas para os IDs da página
+        List<Cachorro> cachorrosCompletos = cachorroRepository.findAllWithCollectionsByIds(ids);
+
+        // 4. Mapeia para DTOs. A mágica para evitar o erro acontece dentro do construtor do DTO
+        List<CachorroResponseDTO> dtos = cachorrosCompletos.stream()
+                .map(CachorroResponseDTO::new)
+                .collect(Collectors.toList());
+
+        // 5. Retorna um novo PageImpl com o contedo completo e a paginação original
+        return new PageImpl<>(dtos, pageable, cachorrosPage.getTotalElements());
     }
 
 
@@ -116,31 +143,36 @@ public class CachorroService {
     public RelatorioFinanceiroDTO gerarRelatorioFinanceiro(Long id) {
         Cachorro cachorro = this.buscarPorId(id);
 
-        double custoTotal = cachorro.getHistoricoDespesas().stream()
-                .mapToDouble(Despesa::getValor)
-                .sum();
-
-        // --- MUDANÇA AQUI: Convertendo para o DTO existente ---
+        // 1. Mapeia a lista de despesas para a lista de DTOs
         List<DespesaInfoDTO> despesasDTO = cachorro.getHistoricoDespesas().stream()
-                .map(DespesaInfoDTO::new) // Usa o construtor que adicionamos
-                .collect(Collectors.toList());
+                .map(DespesaInfoDTO::new)
+                .toList(); // .toList() é mais moderno que .collect(Collectors.toList())
 
-        RelatorioFinanceiroDTO relatorio = new RelatorioFinanceiroDTO();
-        relatorio.setCachorroId(cachorro.getId());
-        relatorio.setNomeCachorro(cachorro.getNome());
-        relatorio.setHistoricoDespesas(despesasDTO); // <-- Agora passa a lista correta
-        relatorio.setCustoTotal(custoTotal);
-        relatorio.setFoiVendido(cachorro.isFoiVendido());
+        // 2. Calcula o custo total usando BigDecimal para garantir a precisão
+        BigDecimal custoTotal = despesasDTO.stream()
+                .map(DespesaInfoDTO::valor) // Acessa o valor BigDecimal do DTO
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 3. Prepara as variáveis que dependem da venda
+        VendaResponseDTO vendaDTO = null;
+        BigDecimal lucro = null;
 
         if (cachorro.isFoiVendido() && cachorro.getRegistroVenda() != null) {
-            VendaResponseDTO vendaDTO = new VendaResponseDTO(cachorro.getRegistroVenda());
-            relatorio.setRegistroVenda(vendaDTO);
-
-            double valorVenda = cachorro.getRegistroVenda().getValor();
-            relatorio.setLucro(valorVenda - custoTotal);
+            vendaDTO = new VendaResponseDTO(cachorro.getRegistroVenda());
+            // Calcula o lucro usando o método subtract() do BigDecimal
+            lucro = vendaDTO.valor().subtract(custoTotal);
         }
 
-        return relatorio;
+        // 4. Cria o DTO final usando o construtor do record, de uma só vez
+        return new RelatorioFinanceiroDTO(
+                cachorro.getId(),
+                cachorro.getNome(),
+                despesasDTO,
+                custoTotal,
+                cachorro.isFoiVendido(),
+                vendaDTO,
+                lucro
+        );
     }
 
     @Transactional
@@ -153,7 +185,7 @@ public class CachorroService {
             if (campos.containsKey("tutorId")) {
                 Long novoTutorId = Long.valueOf(campos.get("tutorId").toString());
                 Tutor novoTutor = tutorRepository.findById(novoTutorId)
-                        .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com ID: " + novoTutorId));
+                        .orElseThrow(() -> new ResourceNotFoundException("Tutor não encontrado com ID: " + novoTutorId));
                 cachorroParaAtualizar.setTutor(novoTutor);
             }
             return cachorroRepository.save(cachorroParaAtualizar);
@@ -163,6 +195,22 @@ public class CachorroService {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao atualizar os dados do cachorro.", e);
         }
+
+    }
+
+    @Transactional(readOnly = true)
+    public List<Ninhada> listarNinhadasDaMae(Long maeId) {
+        if (!cachorroRepository.existsById(maeId)) {
+            throw new ResourceNotFoundException("Cachorro com ID " + maeId + " não encontrado.");
+        }
+
+        return ninhadaRepository.findByMaeIdWithAssociations(maeId);
+    }
+
+    @Transactional(readOnly = true)
+    public CachorroResponseDTO buscarDTOPorId(Long id) {
+        Cachorro cachorro = this.buscarPorId(id); // Reutiliza sua busca que já tem o JOIN FETCH
+        return new CachorroResponseDTO(cachorro); // Converte a entidade para o DTO
     }
 
 }

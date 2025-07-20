@@ -3,25 +3,28 @@ package br.com.petfamily.canilapi.controller;
 import br.com.petfamily.canilapi.controller.dto.*;
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.Despesa;
+import br.com.petfamily.canilapi.model.Ninhada;
+import br.com.petfamily.canilapi.model.Venda;
 import br.com.petfamily.canilapi.service.CachorroService;
 import br.com.petfamily.canilapi.service.VendaService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import br.com.petfamily.canilapi.model.Venda;
-
 
 @RestController
 @RequestMapping("/cachorros")
-@CrossOrigin(origins = "*")
 public class CachorroController {
 
-    // 1. Injeção de dependência via construtor (melhor prática)
+    // Injeção de dependência via construtor (ótima prática!)
     private final CachorroService cachorroService;
     private final VendaService vendaService;
 
@@ -31,27 +34,32 @@ public class CachorroController {
     }
 
     @GetMapping
-    public ResponseEntity<org.springframework.data.domain.Page<CachorroResponseDTO>> listarPaginados(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        org.springframework.data.domain.Page<Cachorro> cachorros = cachorroService.listarTodosPaginado(page, size);
-        org.springframework.data.domain.Page<CachorroResponseDTO> dtos = cachorros.map(CachorroResponseDTO::new);
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<PaginatedResponseDTO<CachorroResponseDTO>> listarPaginados(Pageable pageable) {
+        Page<CachorroResponseDTO> pageDeDtos = cachorroService.listarTodosPaginado(pageable);
+        PaginatedResponseDTO<CachorroResponseDTO> respostaPaginada = new PaginatedResponseDTO<>(pageDeDtos);
+        return ResponseEntity.ok(respostaPaginada);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CachorroResponseDTO> buscarPorId(@PathVariable Long id) {
-        // 4. CORREÇÃO: Busca a entidade nica do serviço
-        Cachorro cachorro = cachorroService.buscarPorId(id);
-        // 5. Converte a Entidade para o DTO de resposta
-        return ResponseEntity.ok(new CachorroResponseDTO(cachorro));
+        CachorroResponseDTO cachorroDTO = cachorroService.buscarDTOPorId(id);
+        return ResponseEntity.ok(cachorroDTO);
     }
 
     @PostMapping
-    public ResponseEntity<CachorroResponseDTO> criar(@RequestBody @Valid CachorroRequestDTO requestDTO, UriComponentsBuilder uriBuilder) {
-        Cachorro novoCachorro = cachorroService.criar(requestDTO);
-        URI uri = uriBuilder.path("/cachorros/{id}").buildAndExpand(novoCachorro.getId()).toUri();
-        return ResponseEntity.created(uri).body(new CachorroResponseDTO(novoCachorro));
+    public ResponseEntity<CachorroResponseDTO> criarCachorro(@RequestBody @Valid CachorroPostRequestDTO dto) {
+        Cachorro cachorroSalvo = cachorroService.criar(dto);
+        CachorroResponseDTO responseDTO = new CachorroResponseDTO(cachorroSalvo);
+
+        // Monta a URI de localização (ótima prática REST)
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(cachorroSalvo.getId())
+                .toUri();
+
+        // Retorna a resposta com status 201 Created e o DTO no corpo
+        return ResponseEntity.created(location).body(responseDTO);
     }
 
     @DeleteMapping("/{id}")
@@ -63,10 +71,10 @@ public class CachorroController {
     @PostMapping("/{id}/despesas")
     public ResponseEntity<Void> adicionarDespesa(@PathVariable Long id, @RequestBody @Valid DespesaRequestDTO requestDTO,
                                                  UriComponentsBuilder uriBuilder) {
-        // Aqui você poderia retornar a despesa criada
         Despesa despesa = cachorroService.adicionarDespesa(id, requestDTO);
         URI uri = uriBuilder.path("/cachorros/{cachorroId}/despesas/{despesaId}")
-                .buildAndExpand(id, despesa.getId()).toUri();
+                .buildAndExpand(id, despesa.getId()) // Este método será encontrado após o Rebuild
+                .toUri();
         return ResponseEntity.created(uri).build();
     }
 
@@ -78,8 +86,8 @@ public class CachorroController {
     }
 
     @GetMapping("/{id}/relatorio-financeiro")
-    public ResponseEntity<br.com.petfamily.canilapi.controller.dto.RelatorioFinanceiroDTO> getRelatorioFinanceiro(@PathVariable Long id) {
-        br.com.petfamily.canilapi.controller.dto.RelatorioFinanceiroDTO relatorio = cachorroService.gerarRelatorioFinanceiro(id);
+    public ResponseEntity<RelatorioFinanceiroDTO> getRelatorioFinanceiro(@PathVariable Long id) {
+        RelatorioFinanceiroDTO relatorio = cachorroService.gerarRelatorioFinanceiro(id);
         return ResponseEntity.ok(relatorio);
     }
 
@@ -93,6 +101,7 @@ public class CachorroController {
     }
 
     @PatchMapping("/{id}")
+    @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
     public ResponseEntity<CachorroResponseDTO> atualizarParcial(
             @PathVariable Long id,
             @RequestBody Map<String, Object> campos) {
@@ -102,11 +111,16 @@ public class CachorroController {
 
     @PostMapping("/{id}/vender")
     public ResponseEntity<VendaResponseDTO> vender(@PathVariable Long id, @RequestBody @Valid VendaRequestDTO dto) {
-       Venda vendaRealizada = vendaService.realizarVenda(id, dto);
+        Venda vendaRealizada = vendaService.realizarVenda(id, dto);
         return ResponseEntity.ok(new VendaResponseDTO(vendaRealizada));
     }
 
-
-
-
+    @GetMapping("/{maeId}/ninhadas")
+    public ResponseEntity<List<NinhadaResponseDTO>> listarNinhadasDaMae(@PathVariable Long maeId) {
+        List<Ninhada> ninhadas = cachorroService.listarNinhadasDaMae(maeId);
+        List<NinhadaResponseDTO> dtos = ninhadas.stream()
+                .map(NinhadaResponseDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
 }

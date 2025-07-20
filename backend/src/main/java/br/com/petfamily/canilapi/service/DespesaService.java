@@ -10,6 +10,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -65,12 +66,10 @@ public class DespesaService {
         return despesaRepository.findAllByDataBetween(dataInicio, dataFim);
     }
 
-    public List<Despesa> listarDespesasPorCategoria(CategoriaDespesa categoria) {
-        return despesaRepository.findAllByCategoria(categoria);
-    }
 
-    public Double calcularCustoTotalPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
-        Double total = despesaRepository.sumDespesasByPeriodo(dataInicio, dataFim);
-        return total == null ? 0.0 : total;
+    public BigDecimal calcularCustoTotalPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
+        BigDecimal total = despesaRepository.sumDespesasByPeriodo(dataInicio, dataFim);
+        // A verificação de nulo agora retorna BigDecimal.ZERO, mantendo a consistência.
+        return total == null ? BigDecimal.ZERO : total;
     }
 }
