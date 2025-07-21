@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 public class TutorService {
 
-    private final  TutorRepository tutorRepository;
+    private final TutorRepository tutorRepository;
     private final CachorroRepository cachorroRepository;
     private final ObjectMapper objectMapper;
 
@@ -31,30 +31,27 @@ public class TutorService {
         this.objectMapper = new ObjectMapper(); // Inicializa o ObjectMapper
     }
 
-    public List<Tutor> listarTodos() {
-        return tutorRepository.findAll();
-    }
-
+    // CORREÇÃO: Agora existe apenas um método 'listarTodos', que é otimizado e ordenado.
     @Transactional(readOnly = true)
-    public List<TutorResponseDTO> listarTodosDTO() {
-        return tutorRepository.findAll().stream()
-                .map(TutorResponseDTO::new) // O mapeamento acontece aqui, dentro da transação
+    public List<TutorResponseDTO> listarTodos() {
+        // Usa o novo método do repositório que busca e ordena de forma eficiente.
+        List<Tutor> tutores = tutorRepository.findAllWithCachorrosSorted();
+        return tutores.stream()
+                .map(TutorResponseDTO::new)
                 .collect(Collectors.toList());
     }
 
     public Tutor buscarPorId(Long id) {
         return tutorRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com o ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Tutor no encontrado com o ID: " + id));
     }
 
     @Transactional
     public Tutor criar(TutorRequestDTO dto) {
         Tutor novoTutor = new Tutor();
-        // 2. Preenche a entidade com os dados que vieram do DTO.
         novoTutor.setNome(dto.nome());
         novoTutor.setEmail(dto.email());
         novoTutor.setTelefone(dto.telefone());
-        // 3. Salva a nova entidade no banco.
         return tutorRepository.save(novoTutor);
     }
 
@@ -81,7 +78,6 @@ public class TutorService {
     }
 
     public Tutor buscarTutorPorNome(String nome) {
-
         return tutorRepository.findByNome(nome);
     }
 
@@ -99,29 +95,21 @@ public class TutorService {
 
     @Transactional
     public Tutor atualizarParcial(Long id, Map<String, Object> campos) {
-        // 1. Busca o tutor no banco de dados. Se não encontrar, lança uma exceção.
         Tutor tutor = tutorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tutor não encontrado com o id: " + id)); // Idealmente, use uma exceção customizada (ex: ResourceNotFoundException)
+                .orElseThrow(() -> new RuntimeException("Tutor não encontrado com o id: " + id));
 
-        // 2. Itera sobre os campos recebidos no JSON
         campos.forEach((nomeCampo, valorCampo) -> {
-            // 3. Usa Reflection para encontrar o campo correspondente na classe Tutor
             Field field = ReflectionUtils.findField(Tutor.class, nomeCampo);
 
             if (field != null) {
-                // Permite o acesso a campos privados
                 field.setAccessible(true);
-
-                // Converte o valor recebido (ex: de um Integer para um Long) para o tipo exato do campo na entidade
                 Object valorConvertido = objectMapper.convertValue(valorCampo, field.getType());
-
-                // Define o novo valor no campo do objeto 'tutor'
                 ReflectionUtils.setField(field, tutor, valorConvertido);
             }
         });
 
-        // 4. Salva o tutor com os campos atualizados (dentro de uma transação, o save pode ser opcional dependendo da configuração)
         return tutorRepository.save(tutor);
     }
-}
 
+    // O método duplicado que estava aqui foi removido.
+}

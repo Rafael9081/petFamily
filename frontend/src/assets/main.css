@@ -1,4 +1,33 @@
-@import './base.css';
+/* C:/.../frontend/src/assets/main.css */
+
+/* 1. Estilos de Base e Variáveis Globais (Design System) */
+/* Estas regras devem ser aplicadas em TODAS as telas */
+:root {
+  --color-background: #f0f2f5;
+  --color-primary-dark: #003366;
+  --color-primary-deep: #04376c;
+  --color-accent-red: #e63946;
+  --color-accent-blue: #3498db;
+  --color-accent-green: #2ecc71;
+  --color-card-bg: #ffffff;
+  --color-text-primary: #2c3e50;
+  --color-text-secondary: #666;
+  --color-border: #e9ecef;
+  --color-success: #27ae60;
+  --color-danger: #c0392b;
+
+  --font-family-base: 'Segoe UI', sans-serif;
+  --border-radius-card: 1rem;
+  --border-radius-button: 0.5rem;
+  --card-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+body {
+  background-color: var(--color-background);
+  font-family: var(--font-family-base);
+  color: var(--color-text-primary);
+  margin: 0; /* Garante que não haja margens padrão */
+}
 
 #app {
   max-width: 1280px;
@@ -7,29 +36,49 @@
   font-weight: normal;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+/* 2. Componentes Reutilizáveis Globais */
+.view-header {
+  margin-bottom: 2rem;
+}
+.view-header h1 {
+  font-size: 2rem;
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+.view-header p {
+  color: var(--color-text-secondary);
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+.card {
+  background: var(--color-card-bg);
+  padding: 1.5rem;
+  border-radius: var(--border-radius-card);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--card-shadow);
+}
+.card h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
+.loading-message, .error-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+}
+.error-message {
+  color: var(--color-danger);
+  font-weight: bold;
+}
+
+/* 3. Estilos Específicos para Telas Maiores */
+/* Aqui ficam apenas as regras que SÓ devem ser aplicadas em telas grandes */
 @media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+  /* Se você tiver algum layout específico para desktop, ele viria aqui.
+     Por enquanto, podemos deixar em branco ou remover se não for necessário. */
 }

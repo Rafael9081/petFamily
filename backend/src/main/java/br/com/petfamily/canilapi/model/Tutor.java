@@ -9,6 +9,10 @@ import lombok.ToString;
 import java.util.ArrayList;
 import java.util.List;
 
+@NamedEntityGraph(
+        name = "Tutor.withCachorros", // Nome do grafo para ser referenciado
+        attributeNodes = @NamedAttributeNode("cachorros") // Diz ao JPA para incluir a lista 'cachorros' na consulta
+)
 @Entity
 @Table(name = "tutores")
 @Getter

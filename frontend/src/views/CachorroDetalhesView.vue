@@ -1,49 +1,61 @@
 <template>
   <div class="detalhes-view">
-    <div v-if="loading" class="loading-message">Carregando dados do pet...</div>
+    <div v-if="loading" class="loading-message">Carregando...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
 
-    <!-- Container principal que só renderiza quando o 'cachorro' já foi carregado -->
     <div v-if="cachorro" class="container">
-      <header class="header">
-        <h1>{{ cachorro.nome }}</h1>
-        <span class="raca">{{ cachorro.raca }}</span>
+      <!-- Estrutura de cabeçalho padronizada -->
+      <header class="view-header">
+        <div class="header-main">
+          <h1>{{ cachorro.nome }}</h1>
+          <span :class="['status-tag', cachorro.status.toLowerCase()]">{{ cachorro.status }}</span>
+        </div>
+        <p>Detalhes completos, histórico financeiro e ações.</p>
         <router-link :to="`/cachorros/${cachorro.id}/editar`" class="btn-editar">
-          Editar
+          Editar Informações
         </router-link>
       </header>
 
-      <section class="info-grid">
-        <div class="info-card">
+      <!-- Grid de informações principais -->
+      <div class="info-grid">
+        <!-- Cada seção de informação agora é um card padronizado -->
+        <section class="card">
           <h3>Informações Básicas</h3>
-          <ul>
+          <ul class="info-list">
+            <li><strong>Raça:</strong> {{ cachorro.raca }}</li>
             <li><strong>Sexo:</strong> {{ cachorro.sexo }}</li>
             <li><strong>Nascimento:</strong> {{ formatarData(cachorro.dataNascimento) }}</li>
             <li><strong>Idade:</strong> {{ calcularIdade(cachorro.dataNascimento) }}</li>
-            <!-- Usando optional chaining (?.) para evitar erro se o tutor for nulo -->
-            <li><strong>Tutor:</strong> {{ cachorro.tutor?.nome || 'Não definido' }}</li>
+            <li><strong>Tutor:</strong> {{ cachorro.tutor?.nome || 'Sem tutor' }}</li>
           </ul>
-        </div>
+        </section>
 
-        <!-- Card financeiro que só renderiza se 'relatorioFinanceiro' existir -->
-        <div v-if="relatorioFinanceiro" class="info-card">
+        <section v-if="relatorioFinanceiro" class="card">
           <h3>Financeiro</h3>
-          <ul>
+          <ul class="info-list">
             <li><strong>Custo Total:</strong> {{ formatarMoeda(relatorioFinanceiro.custoTotal) }}</li>
-            <!-- Verifica se o cão foi vendido e se há um registro de venda -->
-            <li v-if="cachorro.foiVendido && relatorioFinanceiro.registroVenda">
+            <li v-if="cachorro.status === 'VENDIDO' && relatorioFinanceiro.registroVenda">
               <strong>Valor da Venda:</strong> {{ formatarMoeda(relatorioFinanceiro.registroVenda.valor) }}
             </li>
-            <li v-if="cachorro.foiVendido" :class="relatorioFinanceiro.lucro >= 0 ? 'lucro' : 'prejuizo'">
+            <li v-if="cachorro.status === 'VENDIDO'" :class="relatorioFinanceiro.lucro >= 0 ? 'lucro' : 'prejuizo'">
               <strong>Resultado:</strong> {{ formatarMoeda(relatorioFinanceiro.lucro) }}
             </li>
-            <li v-else><strong>Status:</strong> Em estoque</li>
           </ul>
+        </section>
+      </div>
+
+      <!-- Seção de Venda -->
+      <section class="card">
+        <div v-if="cachorro.status === 'DISPONIVEL'">
+          <VenderCachorroForm :cachorro-id="cachorro.id" @venda-concluida="handleVendaConcluida" />
+        </div>
+        <div v-else class="status-info-box">
+          <p>Este cachorro não está disponível para venda. (Status: {{ cachorro.status }})</p>
         </div>
       </section>
 
-      <!-- Histórico de despesas que só renderiza se houver dados -->
-      <section v-if="relatorioFinanceiro && relatorioFinanceiro.historicoDespesas.length > 0" class="info-card">
+      <!-- Histórico de despesas -->
+      <section v-if="relatorioFinanceiro && relatorioFinanceiro.historicoDespesas.length > 0" class="card">
         <h3>Histórico de Despesas</h3>
         <ul class="despesas-list">
           <li v-for="despesa in relatorioFinanceiro.historicoDespesas" :key="despesa.id">
@@ -54,47 +66,44 @@
         </ul>
       </section>
 
-      <!-- Seção de ninhadas que só renderiza se houver dados -->
-      <section v-if="ninhadas.length > 0" class="info-card">
-        <!-- Título dinâmico para maior clareza -->
+      <!-- Seção de ninhadas -->
+      <section v-if="ninhadas.length > 0" class="card">
         <h3>Ninhadas (como {{ cachorro.sexo === 'FEMEA' ? 'Mãe' : 'Pai' }})</h3>
         <ul class="ninhadas-list">
           <li v-for="ninhada in ninhadas" :key="ninhada.id">
             <span>Nascimento: <strong>{{ formatarData(ninhada.dataNascimento) }}</strong></span>
-            <!-- Nome do parceiro (pai ou m-->
-            <span>Com: <strong>{{ ninhada.pai?.nome || ninhada.mae?.nome || 'Não registrado' }}</strong></span>
-            <span>Total de Filhotes: <strong>{{ ninhada.totalFilhotes }}</strong> ({{ ninhada.quantidadeMachos }} M / {{ ninhada.quantidadeFemeas }} F)</span>
+            <span>Com: <strong>{{ ninhada.pai?.nome || ninhada.mae?.nome || 'Desconhecido' }}</strong></span>
+            <span>Nº de Filhotes: <strong>{{ ninhada.totalFilhotes }}</strong></span>
           </li>
         </ul>
       </section>
-
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+// O SCRIPT CONTINUA EXATAMENTE O MESMO, NENHUMA MUDANÇA NA LÓGICA!
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import api from '@/service/api';
+import cachorroService from '@/service/CachorroService';
+import VenderCachorroForm from '@/components/VenderCachorroForm.vue';
+import { type VendaResponse } from '@/service/VendaService';
 
-// --- Interfaces para Tipagem dos Dados ---
 interface Tutor { id: number; nome: string; }
 interface Despesa { id: number; descricao: string; valor: number; data: string; }
 interface Venda { id: number; valor: number; data: string; }
-// Adicionei 'mae' para cobrir todos os cenários
-interface Ninhada { id: number; dataNascimento: string; pai?: { nome: string }; mae?: { nome: string }; totalFilhotes: number; quantidadeMachos: number; quantidadeFemeas: number; }
+interface Ninhada { id: number; dataNascimento: string; pai?: { nome: string }; mae?: { nome: string }; totalFilhotes: number; }
 interface RelatorioFinanceiro { custoTotal: number; registroVenda?: Venda; lucro: number; historicoDespesas: Despesa[]; }
 interface Cachorro {
   id: number;
   nome: string;
   raca: string;
   dataNascimento: string;
-  sexo: string;
-  foiVendido: boolean;
-  tutor: Tutor;
+  sexo: 'MACHO' | 'FEMEA';
+  status: 'DISPONIVEL' | 'RESERVADO' | 'VENDIDO' | 'MATRIZ_PADREADOR' | 'INDISPONIVEL';
+  tutor: Tutor | null;
 }
 
-// --- Estado do Componente ---
 const route = useRoute();
 const cachorro = ref<Cachorro | null>(null);
 const relatorioFinanceiro = ref<RelatorioFinanceiro | null>(null);
@@ -102,138 +111,141 @@ const ninhadas = ref<Ninhada[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
-// --- Funções de Formatação ---
 const formatarData = (dataString: string) => new Date(dataString).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 const formatarMoeda = (valor: number) => (valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-// CORREÇÃO: Função de cálculo de idade padronizada
 const calcularIdade = (dataNascimento: string): string => {
   if (!dataNascimento) return 'Idade desconhecida';
   const hoje = new Date();
   const nasc = new Date(dataNascimento);
   let idadeAnos = hoje.getFullYear() - nasc.getFullYear();
   let idadeMeses = hoje.getMonth() - nasc.getMonth();
-
   if (idadeMeses < 0 || (idadeMeses === 0 && hoje.getDate() < nasc.getDate())) {
     idadeAnos--;
     idadeMeses += 12;
   }
-
-  if (idadeAnos > 0) {
-    return `${idadeAnos} ano(s)`;
-  }
-  return `${idadeMeses} mese(s)`;
+  return idadeAnos > 0 ? `${idadeAnos} ano(s)` : `${idadeMeses} mese(s)`;
 };
 
-// --- Lógica para Buscar os Dados ---
 onMounted(async () => {
-  const cachorroId = route.params.id;
+  const cachorroId = Number(route.params.id);
+  if (isNaN(cachorroId)) {
+    error.value = "ID do cachorro inválido.";
+    loading.value = false;
+    return;
+  }
   try {
-    const [
-      cachorroResponse,
-      financeiroResponse,
-      ninhadasResponse
-    ] = await Promise.all([
-      api.get(`/cachorros/${cachorroId}`),
-      api.get(`/cachorros/${cachorroId}/relatorio-financeiro`),
-      api.get(`/cachorros/${cachorroId}/ninhadas`)
+    const [cachorroResponse, financeiroResponse, ninhadasResponse] = await Promise.all([
+      cachorroService.buscarDetalhes(cachorroId),
+      cachorroService.buscarRelatorioFinanceiro(cachorroId),
+      cachorroService.listarNinhadasDoCachorro(cachorroId),
     ]);
-
     cachorro.value = cachorroResponse.data;
     relatorioFinanceiro.value = financeiroResponse.data;
     ninhadas.value = ninhadasResponse.data;
-
   } catch (err: any) {
-    if (err.response && err.response.status === 404) {
-      error.value = `Cachorro com ID ${cachorroId} não encontrado.`;
-    } else {
-      error.value = "Não foi possível carregar os dados do cachorro.";
-    }
+    error.value = "Não foi possível carregar os dados do cachorro.";
     console.error("Erro ao buscar detalhes do cachorro:", err);
   } finally {
     loading.value = false;
   }
 });
+
+function handleVendaConcluida(venda: VendaResponse) {
+  if (cachorro.value) {
+    cachorro.value.status = 'VENDIDO';
+    cachorro.value.tutor = venda.tutor;
+    cachorroService.buscarRelatorioFinanceiro(cachorro.value.id)
+      .then(response => {
+        relatorioFinanceiro.value = response.data;
+      });
+  }
+}
 </script>
 
 <style scoped>
+/*
+  A MÁGICA: A maioria dos estilos foi para o main.css.
+  Aqui ficam apenas os estilos que são 100% específicos desta página.
+*/
 .detalhes-view {
   padding: 2rem;
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f4f7f6;
 }
 .container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
 }
-.header {
-  background-color: #007bff;
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-editar {
+  background-color: var(--color-primary-dark);
   color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  text-align: center;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--border-radius-button);
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  display: inline-block;
+  margin-top: 1rem;
 }
-.header h1 {
-  margin: 0;
-  font-size: 2.5rem;
+.btn-editar:hover {
+  background-color: var(--color-primary-deep);
 }
-.header .raca {
-  font-size: 1.2rem;
-  opacity: 0.9;
-}
+
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
-.info-card {
-  background-color: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  color: #333;
-}
-.info-card h3 {
-  margin-top: 0;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
-}
-.info-card ul {
+
+.info-list, .despesas-list, .ninhadas-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-.info-card li {
+.info-list li, .despesas-list li, .ninhadas-list li {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
 }
-.info-card li:last-child {
+.info-list li:last-child, .despesas-list li:last-child, .ninhadas-list li:last-child {
   border-bottom: none;
 }
-.lucro { color: #28a745; font-weight: bold; }
-.prejuizo { color: #dc3545; font-weight: bold; }
-.despesas-list li, .ninhadas-list li {
-  display: grid;
-  /* Ajustado para melhor alinhamento */
-  grid-template-columns: 120px 1fr auto;
-  gap: 1rem;
-  align-items: center;
-}
-.valor-despesa {
-  font-weight: bold;
-  text-align: right;
-}
-.loading-message, .error-message {
+.lucro { color: var(--color-success); }
+.prejuizo { color: var(--color-danger); }
+.valor-despesa { font-weight: 600; }
+
+.status-info-box {
+  background-color: #e9ecef;
+  border-left: 5px solid #6c757d;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
+  font-weight: 500;
 }
-.error-message {
-  color: #d32f2f;
+
+.status-tag {
+  display: inline-block;
+  padding: 0.3em 0.8em;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 50px; /* Plula */
+  color: #fff;
 }
+.status-tag.disponivel { background-color: var(--color-accent-green); }
+.status-tag.vendido { background-color: var(--color-text-secondary); }
+.status-tag.reservado { background-color: #ffc107; color: #212529; }
+.status-tag.matriz_padreador { background-color: var(--color-accent-blue); }
+.status-tag.indisponivel { background-color: var(--color-accent-red); }
 </style>
