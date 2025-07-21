@@ -41,6 +41,12 @@ public class TutorController {
         return ResponseEntity.ok(paginaDeTutores);
     }
 
+    @GetMapping("/todos")
+    public ResponseEntity<List<TutorResponseDTO>> listarTodos() {
+        List<TutorResponseDTO> todosOsTutores = tutorService.listarTodos();
+        return ResponseEntity.ok(todosOsTutores);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TutorResponseDTO> buscarPorId(@PathVariable Long id) {
         TutorResponseDTO tutor = tutorService.buscarPorIdDTO(id);

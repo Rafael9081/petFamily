@@ -4,8 +4,10 @@ import br.com.petfamily.canilapi.controller.dto.*;
 import br.com.petfamily.canilapi.infra.exception.ResourceNotFoundException;
 import br.com.petfamily.canilapi.model.*;
 import br.com.petfamily.canilapi.repository.CachorroRepository;
-import br.com.petfamily.canilapi.repository.NinhadaRepository;
 import br.com.petfamily.canilapi.repository.TutorRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,25 +19,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-
-
 @Service
 public class CachorroService {
 
     private final CachorroRepository cachorroRepository;
     private final TutorRepository tutorRepository;
     private final ObjectMapper objectMapper;
-    private final NinhadaRepository ninhadaRepository;
+    // A dependência do NinhadaRepository foi removida para centralizar a responsabilidade.
 
-    public CachorroService(CachorroRepository cachorroRepository,NinhadaRepository ninhadaRepository, TutorRepository tutorRepository, ObjectMapper objectMapper) {
+    public CachorroService(CachorroRepository cachorroRepository, TutorRepository tutorRepository, ObjectMapper objectMapper) {
         this.cachorroRepository = cachorroRepository;
         this.tutorRepository = tutorRepository;
         this.objectMapper = objectMapper;
-        this.ninhadaRepository = ninhadaRepository;
     }
 
     public Cachorro buscarPorId(Long id) {
@@ -45,6 +40,7 @@ public class CachorroService {
 
     @Transactional
     public void deletarCachorro(Long id) {
+        // A busca garante que o cachorro existe antes de tentar deletar
         this.buscarPorId(id);
         cachorroRepository.deleteById(id);
     }
@@ -54,29 +50,35 @@ public class CachorroService {
         return cachorroRepository.findAllWithAssociations();
     }
 
+    // --- MÉTODOS 'CRIAR' CONSOLIDADOS ---
+
     @Transactional
     public Cachorro criar(CachorroRequestDTO dto) {
         Tutor tutor = tutorRepository.findById(dto.tutorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor não encontrado com ID: " + dto.tutorId()));
-
-        Cachorro novoCachorro = new Cachorro();
-        novoCachorro.setNome(dto.nome());
-        novoCachorro.setRaca(dto.raca());
-        novoCachorro.setDataNascimento(dto.dataNascimento());
-        novoCachorro.setSexo(dto.sexo());
-        novoCachorro.setTutor(tutor);
-        novoCachorro.setStatus(StatusCachorro.DISPONIVEL);
-        return cachorroRepository.save(novoCachorro);
+        // Chama o mo com a lógica comum
+        return criarCachorroComum(dto.nome(), dto.raca(), dto.dataNascimento(), dto.sexo(), tutor);
     }
 
     @Transactional
     public Cachorro criar(CachorroPostRequestDTO dto) {
+        // Chama o método privado com a lógica comum, passando null para o tutor
+        return criarCachorroComum(dto.nome(), dto.raca(), dto.dataNascimento(), dto.sexo(), null);
+    }
+
+    /**
+     * Método privado que centraliza a lógica de criação de um cachorro, evitando duplicação de código.
+     */
+    private Cachorro criarCachorroComum(String nome, String raca, LocalDate dataNascimento, Sexo sexo, Tutor tutor) {
         Cachorro novoCachorro = new Cachorro();
-        novoCachorro.setNome(dto.nome());
-        novoCachorro.setRaca(dto.raca());
-        novoCachorro.setDataNascimento(dto.dataNascimento());
-        novoCachorro.setSexo(dto.sexo());
-        novoCachorro.setStatus(StatusCachorro.DISPONIVEL);
+        novoCachorro.setNome(nome);
+        novoCachorro.setRaca(raca);
+        novoCachorro.setDataNascimento(dataNascimento);
+        novoCachorro.setSexo(sexo);
+        novoCachorro.setStatus(StatusCachorro.DISPONIVEL); // Regra de negócio centralizada
+        if (tutor != null) {
+            novoCachorro.setTutor(tutor);
+        }
         return cachorroRepository.save(novoCachorro);
     }
 
@@ -92,78 +94,62 @@ public class CachorroService {
         cachorro.adicionarDespesa(novaDespesa);
         cachorroRepository.save(cachorro);
 
-        return cachorro.getHistoricoDespesas().get(cachorro.getHistoricoDespesas().size() - 1);
+        // RETORNO SEGURO: Retorna a instância da despesa que foi adicionada.
+        // O JPA já populou o ID e o estado dela após o save.
+        return novaDespesa;
     }
 
     @Transactional
     public Cachorro atualizar(Long id, CachorroRequestDTO dto) {
-        // Reutiliza a busca que já lança exceção se não encontrar
         Cachorro cachorro = this.buscarPorId(id);
-
-        // Busca o tutor para garantir que ele existe
         Tutor tutor = tutorRepository.findById(dto.tutorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor não encontrado com ID: " + dto.tutorId()));
 
-        // Atualiza os campos da entidade com os dados do DTO
         cachorro.setNome(dto.nome());
         cachorro.setRaca(dto.raca());
         cachorro.setDataNascimento(dto.dataNascimento());
         cachorro.setSexo(dto.sexo());
         cachorro.setTutor(tutor);
 
-        // O save em uma entidade já existente funciona como um update
         return cachorroRepository.save(cachorro);
     }
 
     public Page<CachorroResponseDTO> listarTodosPaginado(Pageable pageable) {
-        // 1. Busca a página de entidades (sem as coleções ToMany)
         Page<Cachorro> cachorrosPage = cachorroRepository.findByPage(pageable);
-
-        // 2. Extrai os IDs da página atual de forma mais concisa
         List<Long> ids = cachorrosPage.map(Cachorro::getId).getContent();
 
         if (ids.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        // 3. Busca as entidades completas com as coleções, mas apenas para os IDs da página
         List<Cachorro> cachorrosCompletos = cachorroRepository.findAllWithCollectionsByIds(ids);
-
-        // 4. Mapeia para DTOs. A mágica para evitar o erro acontece dentro do construtor do DTO
         List<CachorroResponseDTO> dtos = cachorrosCompletos.stream()
                 .map(CachorroResponseDTO::new)
                 .collect(Collectors.toList());
 
-        // 5. Retorna um novo PageImpl com o contedo completo e a paginação original
         return new PageImpl<>(dtos, pageable, cachorrosPage.getTotalElements());
     }
-
 
     @Transactional(readOnly = true)
     public RelatorioFinanceiroDTO gerarRelatorioFinanceiro(Long id) {
         Cachorro cachorro = this.buscarPorId(id);
 
-        // 1. Mapeia a lista de despesas para a lista de DTOs
         List<DespesaInfoDTO> despesasDTO = cachorro.getHistoricoDespesas().stream()
                 .map(DespesaInfoDTO::new)
-                .toList(); // .toList() é mais moderno que .collect(Collectors.toList())
+                .toList();
 
-        // 2. Calcula o custo total usando BigDecimal para garantir a precisão
         BigDecimal custoTotal = despesasDTO.stream()
-                .map(DespesaInfoDTO::valor) // Acessa o valor BigDecimal do DTO
+                .map(DespesaInfoDTO::valor)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 3. Prepara as variáveis que dependem da venda
         VendaResponseDTO vendaDTO = null;
         BigDecimal lucro = null;
 
         if (cachorro.isFoiVendido() && cachorro.getRegistroVenda() != null) {
             vendaDTO = new VendaResponseDTO(cachorro.getRegistroVenda());
-            // Calcula o lucro usando o método subtract() do BigDecimal
             lucro = vendaDTO.valor().subtract(custoTotal);
         }
 
-        // 4. Cria o DTO final usando o construtor do record, de uma só vez
         return new RelatorioFinanceiroDTO(
                 cachorro.getId(),
                 cachorro.getNome(),
@@ -180,8 +166,10 @@ public class CachorroService {
         Cachorro cachorroParaAtualizar = buscarPorId(id);
 
         try {
+            // O ObjectMapper pode atualizar campos aninhados se a estrutura do JSON corresponder
             objectMapper.updateValue(cachorroParaAtualizar, campos);
 
+            // Tratamento especial para relacionamentos que precisam ser buscados
             if (campos.containsKey("tutorId")) {
                 Long novoTutorId = Long.valueOf(campos.get("tutorId").toString());
                 Tutor novoTutor = tutorRepository.findById(novoTutorId)
@@ -195,22 +183,23 @@ public class CachorroService {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao atualizar os dados do cachorro.", e);
         }
-
-    }
-
-    @Transactional(readOnly = true)
-    public List<Ninhada> listarNinhadasDaMae(Long maeId) {
-        if (!cachorroRepository.existsById(maeId)) {
-            throw new ResourceNotFoundException("Cachorro com ID " + maeId + " não encontrado.");
-        }
-
-        return ninhadaRepository.findByMaeIdWithAssociations(maeId);
     }
 
     @Transactional(readOnly = true)
     public CachorroResponseDTO buscarDTOPorId(Long id) {
-        Cachorro cachorro = this.buscarPorId(id); // Reutiliza sua busca que já tem o JOIN FETCH
-        return new CachorroResponseDTO(cachorro); // Converte a entidade para o DTO
+        Cachorro cachorro = this.buscarPorId(id);
+        return new CachorroResponseDTO(cachorro);
+    }
+
+    @Transactional
+    public Cachorro atualizarStatus(Long id, StatusCachorro novoStatus) {
+        Cachorro cachorro = this.buscarPorId(id);
+
+        // Future-proof: This is the perfect place to add validation for status transitions.
+        // For example: if (cachorro.getStatus() == StatusCachorro.VENDIDO) { ... }
+
+        cachorro.setStatus(novoStatus);
+        return cachorroRepository.save(cachorro);
     }
 
 }
