@@ -2,6 +2,8 @@ package br.com.petfamily.canilapi.infra.exception;
 
 import br.com.petfamily.canilapi.controller.dto.ErrorResponseDTO;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,6 +16,8 @@ import java.time.Instant;
 // Esta anotação intercepta exceções de todos os @RestControllers da aplicação.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // Este mtodo será chamado sempre que um EntityNotFoundException for lançado.
     @ExceptionHandler(EntityNotFoundException.class)
@@ -39,5 +43,16 @@ public class GlobalExceptionHandler {
 
         var error = new ErrorResponseDTO(message, HttpStatus.BAD_REQUEST.value(), Instant.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // Este método captura qualquer outra exceção não tratada (ex: NullPointerException).
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponseDTO> handleGenericException(Exception ex) {
+        // Loga o erro completo no console do servidor para que você possa investigar.
+        log.error("Ocorreu um erro inesperado no servidor: ", ex);
+
+        // Retorna uma mensagem genérica e segura para o cliente.
+        var error = new ErrorResponseDTO("Ocorreu um erro interno no servidor.", HttpStatus.INTERNAL_SERVER_ERROR.value(), Instant.now());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }
