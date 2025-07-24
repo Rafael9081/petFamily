@@ -1,7 +1,7 @@
 package br.com.petfamily.canilapi.service;
 
-import br.com.petfamily.canilapi.controller.dto.VendaRequestDTO;
 import br.com.petfamily.canilapi.controller.dto.VendaRequestFlexDTO;
+import br.com.petfamily.canilapi.controller.dto.VendaResponseDTO;
 import br.com.petfamily.canilapi.model.Cachorro;
 import br.com.petfamily.canilapi.model.StatusCachorro;
 import br.com.petfamily.canilapi.model.Tutor;
@@ -19,9 +19,8 @@ public class VendaService {
     private final VendaRepository vendaRepository;
     private final CachorroRepository cachorroRepository;
     private final TutorRepository tutorRepository;
-    private final TutorService tutorService; // Adicionamos a dependência do TutorService
+    private final TutorService tutorService;
 
-    // Construtor atualizado para injetar todas as dependências necessárias
     public VendaService(VendaRepository vendaRepository, CachorroRepository cachorroRepository, TutorRepository tutorRepository, TutorService tutorService) {
         this.vendaRepository = vendaRepository;
         this.cachorroRepository = cachorroRepository;
@@ -29,67 +28,53 @@ public class VendaService {
         this.tutorService = tutorService;
     }
 
-    // --- LÓGICA ANTIGA (Ainda pode ser útil ou pode ser removida) ---
+    /**
+     * Realiza a venda de um cachorro, permitindo associar a um tutor existente ou criar um novo.
+     * Retorna um DTO seguro para evitar LazyInitializationException.
+     *
+     * @param cachorroId O ID do cachorro a ser vendido.
+     * @param dto        Os dados da venda, incluindo valor, data e informações do tutor.
+     * @return Um VendaResponseDTO com os detalhes da venda concluída.
+     */
     @Transactional
-    public Venda realizarVenda(long cachorroId, VendaRequestDTO dto) {
-        Cachorro cachorro = cachorroRepository.findById(cachorroId)
-                .orElseThrow(() -> new EntityNotFoundException("Cachorro não encontrado com ID: " + cachorroId));
-
-        Tutor tutor = tutorRepository.findById(dto.novoTutorId())
-                .orElseThrow(() -> new EntityNotFoundException("Tutor não encontrado com ID: " + dto.novoTutorId()));
-
-        if (cachorro.getStatus() == StatusCachorro.VENDIDO) {
-            throw new IllegalStateException("Este cachorro já foi vendido.");
-        }
-
-        Venda novaVenda = new Venda();
-        novaVenda.setCachorro(cachorro);
-        novaVenda.setNovoTutor(tutor);
-        novaVenda.setValor(dto.valor());
-        novaVenda.setDataVenda(dto.data());
-
-        cachorro.setStatus(StatusCachorro.VENDIDO);
-        cachorro.setTutor(tutor);
-
-        return vendaRepository.save(novaVenda);
-    }
-
-    @Transactional
-    public Venda realizarVendaFlex(Long cachorroId, VendaRequestFlexDTO dto) {
+    public VendaResponseDTO realizarVendaFlex(Long cachorroId, VendaRequestFlexDTO dto) {
         // 1. Validações iniciais
         Cachorro cachorro = cachorroRepository.findById(cachorroId)
                 .orElseThrow(() -> new EntityNotFoundException("Cachorro não encontrado com ID: " + cachorroId));
 
-        StatusCachorro Status;
         if (cachorro.getStatus() == StatusCachorro.VENDIDO) {
             throw new IllegalStateException("Este cachorro já foi vendido.");
         }
 
         Tutor tutorDaVenda;
 
-        // 2. O coração da lógica "Flex": decidir entre buscar ou criar o tutor
+        // 2. Lógica "Flex" para obter o tutor
         if (dto.tutorId() != null) {
-            // Cenário A: Vendendo para um tutor existente
             tutorDaVenda = tutorRepository.findById(dto.tutorId())
                     .orElseThrow(() -> new EntityNotFoundException("Tutor existente não encontrado com ID: " + dto.tutorId()));
         } else {
-            // Cenário B: Vendendo para um novo tutor
-            // Delegamos a criação para o TutorService, mantendo a responsabilidade separada
             tutorDaVenda = tutorService.criar(dto.novoTutor());
         }
 
-        // 3. Preparar e registrar a venda
+        // 3. Preparar a venda
         Venda novaVenda = new Venda();
-        novaVenda.setCachorro(cachorro);
-        novaVenda.setNovoTutor(tutorDaVenda);
         novaVenda.setValor(dto.valor());
         novaVenda.setDataVenda(dto.data());
+        novaVenda.setNovoTutor(tutorDaVenda);
 
-        // 4. Atualizar o status e o dono do cachorro
-        cachorro.setStatus(StatusCachorro.VENDIDO);
-        cachorro.setTutor(tutorDaVenda);
+        // 4. ENCAPSULAMENTO: Delega as mudanças de estado para a própria entidade Cachorro.
+        cachorro.realizarVenda(novaVenda);
 
-        // 5. Salvar a venda (as alterações no cachorro serão salvas pela transação)
-        return vendaRepository.save(novaVenda);
+        // 5. Persistir a nova venda no banco de dados.
+        Venda vendaSalva = vendaRepository.save(novaVenda);
+
+        // 6. ROBUSTEZ: Busca a entidade novamente com todos os detalhes para construir o DTO.
+        // O movoTutor`
+        // na mesma query, prevenindo a LazyInitializationException de forma performática.
+        Venda vendaCompleta = vendaRepository.findByIdWithDetails(vendaSalva.getId())
+                .orElseThrow(() -> new IllegalStateException("Erro crítico: Venda recém-criada não encontrada."));
+
+        // 7. Retornar o DTO seguro, construído dentro da transação.
+        return new VendaResponseDTO(vendaCompleta);
     }
 }

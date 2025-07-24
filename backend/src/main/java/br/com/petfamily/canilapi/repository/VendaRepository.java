@@ -2,6 +2,7 @@ package br.com.petfamily.canilapi.repository;
 
 import br.com.petfamily.canilapi.model.Venda;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface VendaRepository extends JpaRepository<Venda, Long> {
     /**
@@ -25,4 +27,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
 
     @Query("SELECT SUM(v.valor) FROM Venda v WHERE v.dataVenda BETWEEN :inicio AND :fim")
     BigDecimal sumVendasByPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    @EntityGraph(attributePaths = {"cachorro", "novoTutor"})
+    Optional<Venda> findByIdWithDetails(Long id);
 }
